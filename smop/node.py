@@ -239,6 +239,28 @@ class allocate_stmt(stmt,recordtype("allocate_stmt",
                                     "ident args")):
     pass
 
+# function argument restriction related
+
+class func_arg_restr(stmt, recordtype("func_arg_restr", "dim cls val defVal")):
+    pass
+
+class func_args(stmt, recordtype("func_args", "modif restrs")):
+    pass
+
+# class definition related
+
+class classdef_stmt(stmt, recordtype("classdef_stmt", "name attrs super props methods events ctor")):
+    pass
+
+class class_props(stmt, recordtype("class_props", "stmt_list")):
+    pass
+
+class class_methods(stmt, recordtype("class_methods", "stmt_list")):
+    pass
+
+class class_events(stmt, recordtype("class_events", "stmt_list")):
+    pass
+
 #######################################333
 #
 # FUNCALL

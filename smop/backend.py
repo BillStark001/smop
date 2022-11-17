@@ -447,3 +447,23 @@ def _backend(self, level=0):
     fmt = "while %s:\n%s\n"
     return fmt % (self.cond_expr._backend(),
                   self.stmt_list._backend(level+1))
+
+@extend(node.classdef_stmt)
+def _backend(self, level=0):
+    class_def = f"class {self.name._backend()}"
+    if self.super:
+        class_def += '(' + self.super._backend() + ')'
+    class_def += ':'
+    
+    ans = class_def + '\n'
+    if self.props:
+        ans += self.props._backend(level + 1)
+    if self.methods:
+        ans += self.methods._backend(level + 1)
+    
+    return ans    
+
+@extend(node.func_args)
+def _backend(self, level=0):
+    # TODO
+    return "# TODO argument restriction not implemented!"

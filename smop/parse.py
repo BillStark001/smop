@@ -78,7 +78,6 @@ def p_arg1(p):
     # a hack to support "clear global"
     p[0] = node.string(value=str(p[1]), lineno=p.lineno(1), lexpos=p.lexpos(1))
 
-
 @exceptions
 def p_arg_list(p):
     """
@@ -748,6 +747,11 @@ def p_stmt(p):
          | while_stmt
          | foo_stmt
          | unwind
+         | func_args
+         | classdef_stmt
+         | class_props
+         | class_methods
+         | class_events 
     """
     # END_STMT is intentionally left out
     p[0] = p[1]
@@ -848,8 +852,106 @@ def p_error(p):
     raise_exception(SyntaxError,
                     ('Unexpected "%s" (parser)' % p.value),
                     new_lexer)
-parser = yacc.yacc(start="top")
+    
+    
+# func args
 
+@exceptions
+def p_func_args(p):
+    """
+    func_args : FUNCTION_ARGUMENTS SEMI stmt_list END_FUNCTION_ARGUMENTS
+              | FUNCTION_ARGUMENTS LBRACE expr_list RBRACE SEMI stmt_list END_FUNCTION_ARGUMENTS
+    """
+    if len(p) == 5:
+        p[0] = node.func_args(modif=node.expr_list(), restrs=p[3])
+    elif len(p) == 7:
+        p[0] = node.func_args(modif=p[3], restrs=p[5])
+    else:
+        assert 0, "unexpected length: %d" % len(p)
+
+# classdef
+
+@exceptions
+def p_class_props(p):
+    "class_props : CLASSDEF_PROPS SEMI stmt_list END_CLASSDEF_PROPS"
+    p[0] = node.class_props(stmt_list=p[3])
+    
+
+@exceptions
+def p_class_methods(p):
+    "class_methods : CLASSDEF_METHODS SEMI stmt_list END_CLASSDEF_METHODS"
+    p[0] = node.class_methods(stmt_list=p[3])
+    
+
+@exceptions
+def p_class_events(p):
+    "class_events : CLASSDEF_EVENTS SEMI stmt_list END_CLASSDEF_EVENTS"
+    p[0] = node.class_events(stmt_list=p[3])
+
+
+@exceptions
+def p_super_class_list(p):
+    "super_class_list : ident \n| super_class_list AND ident"
+    if len(p) == 2:
+        p[0] = node.expr_list([p[1]])
+    elif len(p) == 4:
+        p[0] = p[1]
+        p[0].append(p[3])
+    else:
+        assert 0, "classdef superclass %d" % len(p)
+    assert isinstance(p[0], node.expr_list)
+
+@exceptions
+def p_classdef_head_args(p):
+    "classdef_head_args : CLASSDEF \n| CLASSDEF lambda_args"
+    if len(p) == 3:
+        p_args = p[2]
+    elif len(p) == 2:
+        p_args = None
+    else:
+        assert 0, "classdef head %d" % len(p)
+    p[0] = node.classdef_stmt(attrs=p_args, name=None, super=None, props=None, methods=None, events=None, ctor=None)
+    
+@exceptions
+def p_classdef_head(p):
+    """
+    classdef_head : classdef_head_args ident SEMI
+                  | classdef_head_args ident LT super_class_list SEMI
+    """
+    assert isinstance(p[1], node.classdef_stmt), "classdef_head type %s" % type(p[1])
+    p[0] = p[1]
+    if len(p) == 4:
+        p[0].name = p[2]
+    elif len(p) == 6:
+        p[0].name = p[2]
+        p[0].super = p[4]
+    else:
+        assert 0, "classdef stmt %d" % len(p)
+
+@exceptions
+def p_classdef_stmt(p):
+    """
+    classdef_stmt : classdef_head stmt_list END_CLASSDEF
+    """
+    assert isinstance(p[1], node.classdef_stmt), "classdef_stmt type %s" % type(p[1])
+    p[0] = p[1]
+    assert isinstance(p[2], node.stmt_list), "classdef_stmt list type %s" % type(p[2])
+    stmt_uncat = []
+    for stmt in p[2]:
+        if isinstance(stmt, node.class_props):
+            p[0].props = stmt.stmt_list
+        elif isinstance(stmt, node.class_methods):
+            p[0].methods = stmt.stmt_list
+        elif isinstance(stmt, node.class_events):
+            p[0].events = stmt.stmt_list
+        else:
+            stmt_uncat.append(stmt)
+    if stmt_uncat:
+        assert 0, str(stmt_uncat)
+
+# main parser
+
+parser = yacc.yacc(start="top")
 
 @exceptions
 def parse(buf):

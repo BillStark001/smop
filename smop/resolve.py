@@ -249,3 +249,16 @@ def _resolve(self,symtab):
     self.body._resolve(symtab)
     self.head.ret._resolve(symtab)
 
+@extend(node.classdef_stmt)
+def _resolve(self, symtab):
+    if self.name: self.name._resolve(symtab)
+    if self.attrs: self.attrs._resolve(symtab)
+    if self.super: self.super._resolve(symtab)
+    if self.props: self.props._resolve(symtab)
+    if self.methods: self.methods._resolve(symtab)
+    if self.events: self.events._resolve(symtab)
+    
+@extend(node.func_args)
+def _resolve(self, symtab):
+    # TODO, FIXME
+    print("TODO func_args _resolve")

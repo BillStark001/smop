@@ -39,7 +39,6 @@ precedence = (
     ("nonassoc", "LPAREN", "RPAREN", "RBRACE", "LBRACE"),
     ("left", "FIELD", "DOT", "PLUSPLUS", "MINUSMINUS"), )
 
-
 def p_top(p):
     """
     top :
@@ -64,7 +63,7 @@ def p_end_function(p):
     top : top END_FUNCTION
     """
     p[0] = p[1]
-    p[0].append(node.return_stmt(ret=ret_expr))
+    p[0].append(node.return_stmt())
     p[0].append(node.comment_stmt("\nif __name__ == '__main__':\n    pass"))
 
 
@@ -528,8 +527,7 @@ def p_func_stmt(p):
     """
     # stmt_list of func_stmt is set below
     # marked with XYZZY
-    global ret_expr, use_nargin, use_varargin
-    ret_expr = node.expr_list()
+    global use_nargin, use_varargin
     use_varargin = use_nargin = 0
     
     if len(p) == 6:
@@ -540,7 +538,6 @@ def p_func_stmt(p):
             ret=node.expr_list(),
             args=node.expr_list(),
             stmt_list=p[4])
-        ret_expr = node.expr_list()
         
     elif len(p) == 7:
         assert isinstance(p[3], node.expr_list)
@@ -551,7 +548,6 @@ def p_func_stmt(p):
             ret=node.expr_list(),
             args=p[3],
             stmt_list=p[5])
-        ret_expr = node.expr_list()
         
     elif len(p) == 9:
         assert isinstance(p[2], node.expr_list)
@@ -560,7 +556,6 @@ def p_func_stmt(p):
         # print(1, p[7])
         p[0] = node.func_stmt(
             ident=p[4], ret=p[2], args=p[5], stmt_list=p[7])
-        ret_expr = p[2]
         
     else:
         assert 0, "Unexpected function statement length %d" %len(p)
@@ -710,7 +705,7 @@ def p_ret(p):
 @exceptions
 def p_return_stmt(p):
     "return_stmt : RETURN SEMI"
-    p[0] = node.return_stmt(ret=ret_expr)
+    p[0] = node.return_stmt()
 
 
 @exceptions

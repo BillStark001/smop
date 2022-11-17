@@ -49,9 +49,15 @@ class_reserved = {
     "enumeration": "CLASSDEF_ENUMS", 
 }
 
+func_reserved = {
+    "arguments": "FUNCTION_ARGUMENTS"
+}
+
 tokens += list(reserved.values())
 tokens += list(class_reserved.values())
 tokens += ["END_" + x for x in class_reserved.values()]
+tokens += list(func_reserved.values())
+tokens += ["END_" + x for x in func_reserved.values()]
 
 
 def new():
@@ -162,8 +168,14 @@ def new():
             return t
         
         if t.value in class_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'classdef':
-            t.type = reserved.get(t.value, "IDENT")
+            t.type = class_reserved[t.value]
             t.lexer.stack.append(t.value)
+            return t
+        
+        if t.value in func_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'function':
+            t.type = func_reserved[t.value]
+            t.lexer.stack.append(t.value)
+            return t
         
         # end expression
         if (t.value == "end" and (t.lexer.parens > 0 or t.lexer.brackets > 0 or
@@ -176,6 +188,7 @@ def new():
                        "endswitch", "end_try_catch"):
             if len(t.lexer.stack) == 0:
                 t.type = "END_UNEXPECTED"
+                return t
                 # raise_exception(SyntaxError, "unmatched END token: %s" % t.value, t.lexer)
             
             keyword = t.lexer.stack.pop()  # if,while,etc.
@@ -186,11 +199,14 @@ def new():
                 t.type = "END_CLASSDEF"
             elif keyword in class_reserved:
                 t.type = "END_" + class_reserved[keyword]
+            elif keyword in func_reserved:
+                t.type = "END_" + func_reserved[keyword]
             else:
                 t.type = "END_STMT"
             return t
         else:
-            t.type = reserved.get(t.value, "IDENT")
+            type_ident = "IDENT"
+            t.type = reserved.get(t.value, type_ident)
             if t.value in ("if", "function", "while", "for", "switch", "try"):
                 # lexer stack may contain only these
                 # six words, ever, because there is

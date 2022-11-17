@@ -38,7 +38,7 @@ optable = {
 
 
 def backend(t, *args, **kwargs):
-    return t._backend(level=1, *args, **kwargs)
+    return t._backend(level=0, *args, **kwargs)
 
 
 # Sometimes user's variable names in the matlab code collide with Python
@@ -67,6 +67,19 @@ reserved = set(
 #acos  asin atan  cos e
 #exp   fabs floor log log10
 #pi    sin  sqrt  tan
+
+ret_expr_stack = [] # #0: expr #1: used time
+pop_ret_expr = lambda: ret_expr_stack.pop()[0] if len(ret_expr_stack) > 0 else None
+push_ret_expr = lambda r: ret_expr_stack.append([r, 0])
+
+def last_ret_expr():
+    if len(ret_expr_stack) > 0:
+        last_expr = ret_expr_stack[-1]
+        last_expr[1] += 1
+        return last_expr[0]
+    return None
+
+last_ret_expr_used = lambda: (ret_expr_stack[-1][1] > 0) if len(ret_expr_stack) > 0 else True
 
 
 @extend(node.add)
@@ -237,11 +250,18 @@ def _backend(self, level=0):
     self.args.append(node.ident("**kwargs"))
 
     idb = self.ident._backend()
+    push_ret_expr(self.ret)
+    
     ss = [func_template[0],
           (indent * level) + func_template[1].format(idb, self.args._backend())]
     if self.use_nargin:
         ss += [indent * (level + 1) + (x % idb) for x in argin]
     ss.append(self.stmt_list._backend(level=level+1))
+    
+    if not last_ret_expr_used():
+        if last_ret_expr():
+            ss.append((indent * (level + 1)) + node.return_stmt()._backend(level=level+1))
+    pop_ret_expr()
     s = '\n'.join(ss)
 
     return s
@@ -376,10 +396,11 @@ def _backend(self, level=0):
 
 @extend(node.return_stmt)
 def _backend(self, level=0):
-    if not self.ret:
+    ret = last_ret_expr()
+    if not ret:
         return "return"
     else:
-        return "return %s" % self.ret._backend()
+        return "return %s" % ret._backend()
 
 
 @extend(node.stmt_list)

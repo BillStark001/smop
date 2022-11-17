@@ -197,7 +197,7 @@ class persistent_stmt(stmt,recordtype("persistent_stmt","global_list")):
     def __str__(self):
         return "global %s" % str(self.global_list)
 
-class return_stmt(stmt,namedtuple("return_stmt","ret")):
+class return_stmt(stmt,namedtuple("return_stmt","")):
     def __str__(self):
         return "return"
 

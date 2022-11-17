@@ -522,9 +522,9 @@ def p_for_stmt(p):
 
 @exceptions
 def p_func_stmt(p):
-    """func_stmt : FUNCTION ident SEMI
-                 | FUNCTION ident lambda_args SEMI
-                 | FUNCTION ret EQ ident lambda_args SEMI
+    """func_stmt : FUNCTION ident SEMI stmt_list END_FUNCTION
+                 | FUNCTION ident lambda_args SEMI stmt_list END_FUNCTION
+                 | FUNCTION ret EQ ident lambda_args SEMI stmt_list END_FUNCTION
     """
     # stmt_list of func_stmt is set below
     # marked with XYZZY
@@ -532,28 +532,34 @@ def p_func_stmt(p):
     ret_expr = node.expr_list()
     use_varargin = use_nargin = 0
     
-    if len(p) == 4:
+    if len(p) == 6:
+        assert isinstance(p[4], node.stmt_list)
+        # print(1, p[4])
         p[0] = node.func_stmt(
             ident=p[2],
             ret=node.expr_list(),
             args=node.expr_list(),
-            stmt_list=node.stmt_list())
+            stmt_list=p[4])
         ret_expr = node.expr_list()
         
-    elif len(p) == 5:
+    elif len(p) == 7:
         assert isinstance(p[3], node.expr_list)
+        assert isinstance(p[5], node.stmt_list)
+        # print(1, p[5])
         p[0] = node.func_stmt(
             ident=p[2],
             ret=node.expr_list(),
             args=p[3],
-            stmt_list=node.stmt_list())
+            stmt_list=p[5])
         ret_expr = node.expr_list()
         
-    elif len(p) == 7:
+    elif len(p) == 9:
         assert isinstance(p[2], node.expr_list)
         assert isinstance(p[5], node.expr_list)
+        assert isinstance(p[7], node.stmt_list)
+        # print(1, p[7])
         p[0] = node.func_stmt(
-            ident=p[4], ret=p[2], args=p[5], stmt_list=node.stmt_list())
+            ident=p[4], ret=p[2], args=p[5], stmt_list=p[7])
         ret_expr = p[2]
         
     else:

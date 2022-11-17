@@ -16,83 +16,95 @@ tokens = [
     "MINUSEQ", "MUL", "MULEQ", "NE", "NEG", "NUMBER", "OR", "OREQ", "OROR",
     "PLUS", "PLUSEQ", "PLUSPLUS", "RBRACE", "RBRACKET", "RPAREN", "SEMI",
     "STRING", "TRANSPOSE", "ERROR_STMT", "COMMENT", "END_FUNCTION",
-    "END_UNEXPECTED", "POW", "CLASSDEF"
-]
+    "END_UNEXPECTED", "POW", 
+] + ["END_CLASSDEF"]
 
 reserved = {
-    "break"                  : "BREAK",
-    "case"                   : "CASE",
-    "catch"                  : "CATCH",
-    "continue"               : "CONTINUE",
-    "else"                   : "ELSE",
-    "elseif"                 : "ELSEIF",
-    "end_unwind_protect"     : "END_UNWIND_PROTECT",
-    "for"                    : "FOR",
-    "function"               : "FUNCTION",
-    "global"                 : "GLOBAL",
-    "if"                     : "IF",
-    "otherwise"              : "OTHERWISE",
-    "persistent"             : "PERSISTENT",
-    "return"                 : "RETURN",
-    "switch"                 : "SWITCH",
-    "try"                    : "TRY",
-    "unwind_protect"         : "UNWIND_PROTECT",
-    "unwind_protect_cleanup" : "UNWIND_PROTECT_CLEANUP",
-    "while"                  : "WHILE",
-    }
+    "break": "BREAK",
+    "case": "CASE",
+    "catch": "CATCH",
+    "classdef": "CLASSDEF", 
+    "continue": "CONTINUE",
+    "else": "ELSE",
+    "elseif": "ELSEIF",
+    "end_unwind_protect": "END_UNWIND_PROTECT",
+    "for": "FOR",
+    "function": "FUNCTION",
+    "global": "GLOBAL",
+    "if": "IF",
+    "otherwise": "OTHERWISE",
+    "persistent": "PERSISTENT",
+    "return": "RETURN",
+    "switch": "SWITCH",
+    "try": "TRY",
+    "unwind_protect": "UNWIND_PROTECT",
+    "unwind_protect_cleanup": "UNWIND_PROTECT_CLEANUP",
+    "while": "WHILE",
+}
+
+class_reserved = {
+    "properties": "CLASSDEF_PROPS", 
+    "methods": "CLASSDEF_METHODS", 
+    "events": "CLASSDEF_EVENTS", 
+    "enumeration": "CLASSDEF_ENUMS", 
+}
+
 tokens += list(reserved.values())
+tokens += list(class_reserved.values())
+tokens += ["END_" + x for x in class_reserved.values()]
+
 
 def new():
-    t_AND         = r"\&"
-    t_ANDAND      = r"\&\&"
-    t_ANDEQ       = r"\&="
-    t_BACKSLASH   = r"\\"
-    t_COLON       = r":"
-    t_DIV         = r"\/"
-    t_DIVEQ       = r"\/="
-    t_DOT         = r"\."
-    t_DOTDIV      = r"\./"
-    t_DOTDIVEQ    = r"\./="
-    t_DOTEXP      = r"\.\^"
-    t_DOTMUL      = r"\.\*"
-    t_DOTMULEQ    = r"\.\*="
-    t_EQ          = r"="
-    t_EQEQ        = r"=="
-    t_EXP         = r"\^"
-    t_EXPEQ       = r"\^="
-    t_GE          = r">="
-    t_GT          = r"\>"
-    t_HANDLE      = r"\@"
-    t_LE          = r"<="
-    t_LT          = r"\<"
-    t_MINUS       = r"\-"
-    t_MINUSEQ     = r"\-="
-    t_MINUSMINUS  = r"\--"
-    t_MUL         = r"\*"
-    t_POW         = r"\*\*"
-    t_MULEQ       = r"\*="
-    t_NE          = r"(~=)|(!=)"
-    t_NEG         = r"\~|\!"
-    t_OR          = r"\|"
-    t_OREQ        = r"\|="
-    t_OROR        = r"\|\|"
-    t_PLUS        = r"\+"
-    t_PLUSEQ      = r"\+="
-    t_PLUSPLUS    = r"\+\+"
-    
-    states = (("matrix","inclusive"),
-              ("afterkeyword","exclusive"))
+    t_AND = r"\&"
+    t_ANDAND = r"\&\&"
+    t_ANDEQ = r"\&="
+    t_BACKSLASH = r"\\"
+    t_COLON = r":"
+    t_DIV = r"\/"
+    t_DIVEQ = r"\/="
+    t_DOT = r"\."
+    t_DOTDIV = r"\./"
+    t_DOTDIVEQ = r"\./="
+    t_DOTEXP = r"\.\^"
+    t_DOTMUL = r"\.\*"
+    t_DOTMULEQ = r"\.\*="
+    t_EQ = r"="
+    t_EQEQ = r"=="
+    t_EXP = r"\^"
+    t_EXPEQ = r"\^="
+    t_GE = r">="
+    t_GT = r"\>"
+    t_HANDLE = r"\@"
+    t_LE = r"<="
+    t_LT = r"\<"
+    t_MINUS = r"\-"
+    t_MINUSEQ = r"\-="
+    t_MINUSMINUS = r"\--"
+    t_MUL = r"\*"
+    t_POW = r"\*\*"
+    t_MULEQ = r"\*="
+    t_NE = r"(~=)|(!=)"
+    t_NEG = r"\~|\!"
+    t_OR = r"\|"
+    t_OREQ = r"\|="
+    t_OROR = r"\|\|"
+    t_PLUS = r"\+"
+    t_PLUSEQ = r"\+="
+    t_PLUSPLUS = r"\+\+"
+
+    states = (("matrix", "inclusive"),
+              ("afterkeyword", "exclusive"))
 
     states = (("matrix", "inclusive"), ("afterkeyword", "exclusive"))
 
-    ws = r"(\s|\.\.\..*\n|\\\n)"
+    ws = r"(\s|\.\.\..*\n|\\\n)" # spaces or equivalent tokens
     #ws  = r"(\s|(\#|(%[^!])).*\n|\.\.\..*\n|\\\n)"
-    ws1 = ws + "+"
-    ws0 = ws + "*"
+    ws1 = ws + "+" # 1 or more spaces
+    ws0 = ws + "*" # spaces or no space
     ms = r"'([^']|(''))*'"
     os = r'"([^"\a\b\f\r\t\0\v\n\\]|(\\[abfn0vtr\"\n\\])|(""))*"'
     mos = "(%s)|(%s)" % (os, ms)
-    id = r"[a-zA-Z_][a-zA-Z_0-9]*"
+    id = r"[a-zA-Z_][a-zA-Z_0-9]*" # name literals
 
     def unescape(s):
         if s[0] == "'":
@@ -111,7 +123,7 @@ def new():
 
     def t_afterkeyword_error(t):
         t_error(t)
-    
+
     # A quote, immediately following any of: (1) an alphanumeric
     # charater, (2) right bracket, parenthesis or brace,
     # or (3) another TRANSPOSE, is a TRANSPOSE.  Otherwise, it starts a
@@ -132,14 +144,15 @@ def new():
         t.value = unescape(t.value)
         return t
 
+    # structures
     @TOKEN(r"(\.%s)?%s" % (ws0, id))
     def t_IDENT(t):
+        # parfor is not supported programmatically in Python.
+        # workarounds include thread pool etc.
         if t.value == "parfor":
             t.value = "for"
-        if t.value == "classdef":
-            raise_exception(SyntaxError,
-                            "Not implemented: %s" % t.value,
-                            t.lexer)
+        # if t.value == "classdef":
+        #      raise_exception(SyntaxError, "Not implemented: %s" % t.value, t.lexer)
         t.lexer.lineno += t.value.count("\n")
         if t.value[0] == ".":
             # Reserved words are not reserved
@@ -147,16 +160,32 @@ def new():
             # is illegal, but foo.return=1 is fine.
             t.type = "FIELD"
             return t
+        
+        if t.value in class_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'classdef':
+            t.type = reserved.get(t.value, "IDENT")
+            t.lexer.stack.append(t.value)
+        
+        # end expression
         if (t.value == "end" and (t.lexer.parens > 0 or t.lexer.brackets > 0 or
                                   t.lexer.braces > 0)):
             t.type = "END_EXPR"
             return t
+        
+        # end block
         if t.value in ("end", "endif", "endfunction", "endwhile", "endfor",
                        "endswitch", "end_try_catch"):
+            if len(t.lexer.stack) == 0:
+                t.type = "END_UNEXPECTED"
+                # raise_exception(SyntaxError, "unmatched END token: %s" % t.value, t.lexer)
+            
             keyword = t.lexer.stack.pop()  # if,while,etc.
             #assert keyword == t.value or keyword == "try"
             if keyword == "function":
                 t.type = "END_FUNCTION"
+            elif keyword == "classdef":
+                t.type = "END_CLASSDEF"
+            elif keyword in class_reserved:
+                t.type = "END_" + class_reserved[keyword]
             else:
                 t.type = "END_STMT"
             return t
@@ -166,6 +195,8 @@ def new():
                 # lexer stack may contain only these
                 # six words, ever, because there is
                 # one place to push -- here
+                t.lexer.stack.append(t.value)
+            elif t.value in ("classdef"):
                 t.lexer.stack.append(t.value)
             if (t.type != "IDENT" and t.lexer.lexdata[t.lexer.lexpos] == "'"):
                 t.lexer.begin("afterkeyword")
@@ -280,7 +311,7 @@ def new():
         # In matrix state, consume whitespace separating two
         # terms and return a fake COMMA token.  This allows
         # parsing [1 2 3] as if it was [1,2,3].  Handle
-        # with care: [x + y] vs [x +y] 
+        # with care: [x + y] vs [x +y]
         #
         # A term T is
         # (a) a name or a number
@@ -291,12 +322,12 @@ def new():
         # (1) an alphanumeric charater \w
         # (2) single quote (in octave also double-quote)
         # (3) right parenthesis, bracket, or brace
-        # (4) a dot (after a number, such as 3. 
+        # (4) a dot (after a number, such as 3.
         #
         # The pattern for whitespace accounts for ellipsis as a
         # whitespace, and for the trailing junk.
         #
-        # Terms start with 
+        # Terms start with
         # (1) an alphanumeric character
         # (2) a single or double quote,
         # (3) left paren, bracket, or brace and finally
@@ -320,7 +351,8 @@ def new():
         pass
 
     def t_error(t):
-        raise_exception(SyntaxError, ('Unexpected "%s" (lexer)' % t.value), t.lexer)
+        raise_exception(
+            SyntaxError, ('Unexpected "%s" (lexer)' % t.value), t.lexer)
 
     lexer = lex.lex(reflags=re.MULTILINE)
     lexer.brackets = 0  # count open square brackets
@@ -329,6 +361,7 @@ def new():
     lexer.stack = []
     return lexer
 
+
 def raise_exception(error_type, message, my_lexer):
     startpos = 1 + my_lexer.lexdata.rfind("\n", 0, my_lexer.lexpos)
     endpos = my_lexer.lexdata.find("\n", startpos)
@@ -336,6 +369,8 @@ def raise_exception(error_type, message, my_lexer):
                                my_lexer.lineno,
                                1 + my_lexer.lexpos - startpos,
                                my_lexer.lexdata[startpos:endpos]))
+
+
 def main():
     lexer = new()
     line = ""

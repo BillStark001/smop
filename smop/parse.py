@@ -522,7 +522,8 @@ def p_for_stmt(p):
 
 @exceptions
 def p_func_stmt(p):
-    """func_stmt : FUNCTION ident lambda_args SEMI
+    """func_stmt : FUNCTION ident SEMI
+                 | FUNCTION ident lambda_args SEMI
                  | FUNCTION ret EQ ident lambda_args SEMI
     """
     # stmt_list of func_stmt is set below
@@ -530,8 +531,16 @@ def p_func_stmt(p):
     global ret_expr, use_nargin, use_varargin
     ret_expr = node.expr_list()
     use_varargin = use_nargin = 0
-
-    if len(p) == 5:
+    
+    if len(p) == 4:
+        p[0] = node.func_stmt(
+            ident=p[2],
+            ret=node.expr_list(),
+            args=node.expr_list(),
+            stmt_list=node.stmt_list())
+        ret_expr = node.expr_list()
+        
+    elif len(p) == 5:
         assert isinstance(p[3], node.expr_list)
         p[0] = node.func_stmt(
             ident=p[2],
@@ -539,14 +548,16 @@ def p_func_stmt(p):
             args=p[3],
             stmt_list=node.stmt_list())
         ret_expr = node.expr_list()
+        
     elif len(p) == 7:
         assert isinstance(p[2], node.expr_list)
         assert isinstance(p[5], node.expr_list)
         p[0] = node.func_stmt(
             ident=p[4], ret=p[2], args=p[5], stmt_list=node.stmt_list())
         ret_expr = p[2]
+        
     else:
-        assert 0
+        assert 0, "Unexpected function statement length %d" %len(p)
 
 
 @exceptions

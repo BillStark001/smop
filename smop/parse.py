@@ -518,47 +518,67 @@ def p_for_stmt(p):
         p[2].props = "I"  # I= for-loop iteration variable
         p[0] = node.for_stmt(ident=p[2], expr=p[4], stmt_list=p[6])
 
+# function
+
+def p_func_head(p):
+    """
+    func_head : FUNCTION ident
+              | FUNCTION ident FIELD
+              | FUNCTION ret EQ ident
+              | FUNCTION ret EQ ident FIELD
+    """
+    ret = None
+    fname = None
+    modif = None
+    if len(p) == 3:
+        ret = node.expr_list()
+        fname = p[2]
+        modif = node.expr_list()
+    elif len(p) == 4:
+        ret = node.expr_list()
+        fname = node.ident(name=p[3], lineno=p.lineno(3), lexpos=p.lexpos(3))
+        modif = p[2]
+    elif len(p) == 5:
+        ret = p[2]
+        fname = p[4]
+        modif = node.expr_list()
+    elif len(p) == 6:
+        ret = p[2]
+        fname = node.ident(name=p[5], lineno=p.lineno(5), lexpos=p.lexpos(5))
+        modif = p[4]
+    else:
+        assert 0, "func head len %d" % len(p)
+    p[0] = node.func_stmt(ident=fname, ret=ret, modif=modif, args=None, stmt_list=None, use_nargin=0)
+
+
 @exceptions
 def p_func_stmt(p):
-    """func_stmt : FUNCTION ident SEMI stmt_list END_FUNCTION
-                 | FUNCTION ident lambda_args SEMI stmt_list END_FUNCTION
-                 | FUNCTION ret EQ ident lambda_args SEMI stmt_list END_FUNCTION
+    """func_stmt : func_head SEMI stmt_list END_FUNCTION
+                 | func_head lambda_args SEMI stmt_list END_FUNCTION
     """
     # stmt_list of func_stmt is set below
     # marked with XYZZY
     global use_nargin, use_varargin
     use_varargin = use_nargin = 0
     
-    if len(p) == 6:
-        assert isinstance(p[4], node.stmt_list)
-        # print(1, p[4])
-        p[0] = node.func_stmt(
-            ident=p[2],
-            ret=node.expr_list(),
-            args=node.expr_list(),
-            stmt_list=p[4])
+    assert isinstance(p[1], node.func_stmt)
+    p[0] = p[1]
+    
+    if len(p) == 5:
+        assert isinstance(p[3], node.stmt_list)
+        p[0].args = node.expr_list()
+        p[0].stmt_list=p[3]
         
-    elif len(p) == 7:
-        assert isinstance(p[3], node.expr_list)
-        assert isinstance(p[5], node.stmt_list)
-        # print(1, p[5])
-        p[0] = node.func_stmt(
-            ident=p[2],
-            ret=node.expr_list(),
-            args=p[3],
-            stmt_list=p[5])
-        
-    elif len(p) == 9:
+    elif len(p) == 6:
         assert isinstance(p[2], node.expr_list)
-        assert isinstance(p[5], node.expr_list)
-        assert isinstance(p[7], node.stmt_list)
-        # print(1, p[7])
-        p[0] = node.func_stmt(
-            ident=p[4], ret=p[2], args=p[5], stmt_list=p[7])
+        assert isinstance(p[4], node.stmt_list)
+        p[0].args=p[2]
+        p[0].stmt_list=p[4]
         
     else:
         assert 0, "Unexpected function statement length %d" %len(p)
 
+    p[0].use_nargin = use_nargin
 
 @exceptions
 def p_funcall_expr(p):
@@ -857,10 +877,74 @@ def p_error(p):
 # func args
 
 @exceptions
+def p_fa_1(p):
+    """
+    fa_1 : ident LPAREN expr_list RPAREN
+         | ident 
+    """
+    p[0] = node.func_arg_restr(dim=None, cls=None, val=None, defVal=None)
+    if len(p) == 5:
+        p[0].dim = p[3]
+        
+@exceptions
+def p_fa_2(p):
+    """
+    fa_2 : fa_1
+         | fa_1 ident
+         | fa_1 LBRACE expr_list RBRACE
+         | fa_1 ident LBRACE expr_list RBRACE
+    """
+    assert isinstance(p[1], node.func_arg_restr)
+    p[0] = p[1]
+    if len(p) == 3:
+        p[0].cls = p[2]
+    elif len(p) == 5:
+        p[0].val = p[3]
+    elif len(p) == 6:
+        p[0].cls = p[2]
+        p[0].val = p[4]
+    elif len(p) == 2:
+        pass
+    else:
+        assert 0, "fa_2 len %d" % len(p)
+        
+@exceptions
+def p_func_arg_restr(p):
+    """
+    func_arg_restr : fa_2 SEMI
+                   | fa_2 EQ expr SEMI
+    """
+    assert isinstance(p[1], node.func_arg_restr)
+    p[0] = p[1]
+    if len(p) == 5:
+        p[0].defVal = p[3]
+    elif len(p) == 3:
+        pass
+    else:
+        assert 0, "func_arg_restr len %d" % len(p)
+        
+@exceptions
+def p_func_arg_list(p):
+    """
+    func_arg_list : func_arg_restr
+                  | func_arg_list func_arg_restr
+    """
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 3:
+        if not isinstance(p[1], node.stmt_list):
+            p[0] = node.stmt_list([p[1], p[2]])
+        else:
+            p[1].append(p[2])
+            p[0] = p[1]
+    else:
+        assert 0, "func_arg_list len %d" % len(p)
+
+@exceptions
 def p_func_args(p):
     """
-    func_args : FUNCTION_ARGUMENTS SEMI stmt_list END_FUNCTION_ARGUMENTS
-              | FUNCTION_ARGUMENTS LBRACE expr_list RBRACE SEMI stmt_list END_FUNCTION_ARGUMENTS
+    func_args : FUNCTION_ARGUMENTS SEMI func_arg_list END_FUNCTION_ARGUMENTS
+              | FUNCTION_ARGUMENTS LPAREN expr_list RPAREN SEMI func_arg_list END_FUNCTION_ARGUMENTS
     """
     if len(p) == 5:
         p[0] = node.func_args(modif=node.expr_list(), restrs=p[3])
@@ -873,14 +957,26 @@ def p_func_args(p):
 
 @exceptions
 def p_class_props(p):
-    "class_props : CLASSDEF_PROPS SEMI stmt_list END_CLASSDEF_PROPS"
-    p[0] = node.class_props(stmt_list=p[3])
+    "class_props : CLASSDEF_PROPS SEMI stmt_list END_CLASSDEF_PROPS\n| CLASSDEF_PROPS lambda_args SEMI stmt_list END_CLASSDEF_PROPS"
+    if len(p) == 6:
+        restrs = p[2]
+        stmt = p[4]
+    else:
+        restrs = None
+        stmt = p[3]
+    p[0] = node.class_props(stmt_list=stmt, restrs=restrs)
     
 
 @exceptions
 def p_class_methods(p):
-    "class_methods : CLASSDEF_METHODS SEMI stmt_list END_CLASSDEF_METHODS"
-    p[0] = node.class_methods(stmt_list=p[3])
+    "class_methods : CLASSDEF_METHODS SEMI stmt_list END_CLASSDEF_METHODS\n| CLASSDEF_METHODS lambda_args SEMI stmt_list END_CLASSDEF_METHODS"
+    if len(p) == 6:
+        restrs = p[2]
+        stmt = p[4]
+    else:
+        restrs = None
+        stmt = p[3]
+    p[0] = node.class_methods(stmt_list=stmt, restrs=restrs)
     
 
 @exceptions
@@ -936,6 +1032,7 @@ def p_classdef_stmt(p):
     assert isinstance(p[1], node.classdef_stmt), "classdef_stmt type %s" % type(p[1])
     p[0] = p[1]
     assert isinstance(p[2], node.stmt_list), "classdef_stmt list type %s" % type(p[2])
+    # TODO reform 
     stmt_uncat = []
     for stmt in p[2]:
         if isinstance(stmt, node.class_props):
@@ -946,8 +1043,8 @@ def p_classdef_stmt(p):
             p[0].events = stmt.stmt_list
         else:
             stmt_uncat.append(stmt)
-    if stmt_uncat:
-        assert 0, str(stmt_uncat)
+    # if stmt_uncat:
+    #     assert 0, str(stmt_uncat)
 
 # main parser
 

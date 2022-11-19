@@ -1,5 +1,6 @@
 from smop.node.base import *
 from smop.node.stmt import *
+from smop.node.types import expr, expr_list
 
 
 class func_stmt(stmt, recordtype("func_stmt",
@@ -20,6 +21,10 @@ class lambda_expr(func_stmt):
 class function(stmt, recordtype("function", "head body")):
     pass
 
+class func_superclass_handle(expr):
+    def __init__(self, name, cname):
+        super().__init__(op="@", args=expr_list([name, cname]))
+    pass
 
 # function argument restriction related
 

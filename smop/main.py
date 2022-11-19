@@ -23,12 +23,12 @@ def convert(finfo: tasks.FileInfo,
           i: int = -1, fp: Optional[TextIOBase] = None):
     options.filename = finfo.input_name
     
+    if not options.filename.endswith(".m"):
+        print(f"Ignored: '{finfo.input_disp}' (unexpected file type)")
+        return
+    
     if options.verbose:
         print(f"Parsing: '{finfo.input_disp} -> {finfo.output_disp} (#{i})")
-        
-    if not options.filename.endswith(".m"):
-        print(f"\tIgnored: '{finfo.input_disp}' (unexpected file type)")
-        return
     
     buf = tasks.read(options.filename)
     ret = tasks.convert(
@@ -41,7 +41,7 @@ def convert(finfo: tasks.FileInfo,
         ret = tasks.get_header(options.filename) + ret
     
     if not fp:
-        os.makedirs(os.path.dirname(finfo.output_name))
+        os.makedirs(os.path.dirname(finfo.output_name), exist_ok=True)
         tasks.write(finfo.output_name, ret)
     else:
         fp.write(ret)
@@ -77,7 +77,7 @@ def main():
         try:
             if should_exclude(finfo.input_name):
                 if options.verbose:
-                    print(f"\tExcluded: '{finfo.input_disp}'")
+                    print(f"Excluded: '{finfo.input_disp}'")
                 continue
             
             convert(finfo, i=i, fp=fp)

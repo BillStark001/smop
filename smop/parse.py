@@ -584,21 +584,36 @@ def p_func_stmt(p):
 
     p[0].use_nargin = use_nargin
 
+    
 
 @exceptions
 def p_funcall_expr(p):
     """expr : expr LPAREN expr_list RPAREN
             | expr LPAREN RPAREN
+            | expr HANDLE expr LPAREN expr_list RPAREN
+            | expr HANDLE expr LPAREN RPAREN
     """
-    if (len(p) == 5 and len(p[3]) == 1 and p[3][0].__class__ is node.expr and
-            p[3][0].op == ":" and not p[3][0].args):
-        # foo(:) => ravel(foo)
-        p[0] = node.funcall(
-            func_expr=node.ident("ravel"), args=node.expr_list([p[1]]))
+    
+    def ravel_func(p3):
+        return len(p3) == 1 and isinstance(p3[0], node.expr) and \
+            p3[0].op == ":" and not p3[0].args
+    
+    if len(p) == 7 or len(p) == 6:
+        func_expr = node.func_superclass_handle(p[1], p[3])
     else:
-        args = node.expr_list() if len(p) == 4 else p[3]
-        assert isinstance(args, node.expr_list)
-        p[0] = node.funcall(func_expr=p[1], args=args)
+        func_expr = p[1]
+        
+    if len(p) % 2 == 1:
+        args = p[len(p)-2]
+    else:
+        args = node.expr_list()
+        
+    if ravel_func(args):
+        args = node.expr_list([func_expr])
+        func_expr = node.ident("ravel")
+        
+    assert isinstance(args, node.expr_list), f'funcall args {args} {type(args)}'
+    p[0] = node.funcall(func_expr=func_expr, args=args)
 
 
 @exceptions

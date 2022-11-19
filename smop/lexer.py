@@ -207,12 +207,12 @@ def new():
         else:
             type_ident = "IDENT"
             t.type = reserved.get(t.value, type_ident)
-            if t.value in ("if", "function", "while", "for", "switch", "try"):
+            if t.value in {"if", "function", "while", "for", "switch", "try"}:
                 # lexer stack may contain only these
                 # six words, ever, because there is
                 # one place to push -- here
                 t.lexer.stack.append(t.value)
-            elif t.value in ("classdef"):
+            elif t.value in {"classdef"}:
                 t.lexer.stack.append(t.value)
             if (t.type != "IDENT" and t.lexer.lexdata[t.lexer.lexpos] == "'"):
                 t.lexer.begin("afterkeyword")

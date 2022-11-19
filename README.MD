@@ -1,3 +1,5 @@
+# ATTENTION: This is an improved version of the original SMOP targeting the support of class definition and type inference. This project is still WIP. If you want to try it, execute it directly, and do NOT use pip to install it!
+
 Summary
 -------
 

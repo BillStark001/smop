@@ -68,9 +68,13 @@ reserved = set(
 #exp   fabs floor log log10
 #pi    sin  sqrt  tan
 
-ret_expr_stack = [] # #0: expr #1: used time
-pop_ret_expr = lambda: ret_expr_stack.pop()[0] if len(ret_expr_stack) > 0 else None
-push_ret_expr = lambda r: ret_expr_stack.append([r, 0])
+ret_expr_stack = []  # 0: expr #1: used time
+def pop_ret_expr(): return ret_expr_stack.pop()[
+    0] if len(ret_expr_stack) > 0 else None
+
+
+def push_ret_expr(r): return ret_expr_stack.append([r, 0])
+
 
 def last_ret_expr():
     if len(ret_expr_stack) > 0:
@@ -79,9 +83,11 @@ def last_ret_expr():
         return last_expr[0]
     return None
 
-last_ret_expr_used = lambda: (ret_expr_stack[-1][1] > 0) if len(ret_expr_stack) > 0 else True
 
-
+def last_ret_expr_used(): return (
+    ret_expr_stack[-1][1] > 0) if len(ret_expr_stack) > 0 else True
+
+
 @extend(node.add)
 def _backend(self, level=0):
     if (self.args[0].__class__ is node.number and
@@ -91,37 +97,36 @@ def _backend(self, level=0):
     else:
         return "(%s+%s)" % (self.args[0]._backend(),
                             self.args[1]._backend())
-
 
 @extend(node.arrayref)
 def _backend(self, level=0):
     fmt = "%s[%s]"
     return fmt % (self.func_expr._backend(),
                   self.args._backend())
-
+
 
 @extend(node.break_stmt)
 def _backend(self, level=0):
     return "break"
-
+
 
 @extend(node.builtins)
 def _backend(self, level=0):
     #if not self.ret:
     return "%s(%s)" % (self.__class__.__name__,
                        self.args._backend())
-
+
 
 @extend(node.cellarray)
 def _backend(self, level=0):
     return "cellarray([%s])" % self.args._backend()
-
+
 
 @extend(node.cellarrayref)
 def _backend(self, level=0):
     return "%s[%s]" % (self.func_expr._backend(),
                        self.args._backend())
-
+
 
 @extend(node.comment_stmt)
 def _backend(self, level=0):
@@ -131,18 +136,18 @@ def _backend(self, level=0):
     if s[0] in "%#":
         return s.replace("%", "#")
     return self.value
-
+
 
 @extend(node.concat_list)
 def _backend(self, level=0):
     #import pdb; pdb.set_trace()
     return ",".join(["[%s]" % t._backend() for t in self])
-
+
 
 @extend(node.continue_stmt)
 def _backend(self, level=0):
     return "continue"
-
+
 
 @extend(node.expr)
 def _backend(self, level=0):
@@ -251,16 +256,17 @@ def _backend(self, level=0):
 
     idb = self.ident._backend()
     push_ret_expr(self.ret)
-    
+
     ss = [func_template[0],
           (indent * level) + func_template[1].format(idb, self.args._backend())]
     if self.use_nargin:
         ss += [indent * (level + 1) + (x % idb) for x in argin]
     ss.append(self.stmt_list._backend(level=level+1))
-    
+
     if not last_ret_expr_used():
         if last_ret_expr():
-            ss.append((indent * (level + 1)) + node.return_stmt()._backend(level=level+1))
+            ss.append((indent * (level + 1)) +
+                      node.return_stmt()._backend(level=level+1))
     pop_ret_expr()
     s = '\n'.join(ss)
 
@@ -441,12 +447,13 @@ def _backend(self, level=0):
                   indent*level,
                   self.finally_stmt._backend(level+1))
 
-
+
 @extend(node.while_stmt)
 def _backend(self, level=0):
     fmt = "while %s:\n%s\n"
     return fmt % (self.cond_expr._backend(),
                   self.stmt_list._backend(level+1))
+
 
 @extend(node.classdef_stmt)
 def _backend(self, level=0):
@@ -454,14 +461,15 @@ def _backend(self, level=0):
     if self.super:
         class_def += '(' + self.super._backend() + ')'
     class_def += ':'
-    
+
     ans = class_def + '\n'
     if self.props:
         ans += self.props._backend(level + 1)
     if self.methods:
         ans += self.methods._backend(level + 1)
-    
-    return ans    
+
+    return ans
+
 
 @extend(node.func_args)
 def _backend(self, level=0):

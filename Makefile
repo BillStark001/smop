@@ -22,11 +22,11 @@ PYTEST = python -m pytest
 V = 3
 
 all: solver.py
-	$(PYTEST) test_matlabarray.py
-	$(PYTEST) test_parse.py
-	$(PYTEST) test_lexer.py
-	$(PYTEST) test_solver.py
-	#$(PYTEST) test_primes.py
+	$(PYTEST) smop_test/test_matlabarray.py
+	$(PYTEST) smop_test/test_parse.py
+	$(PYTEST) smop_test/test_lexer.py
+	$(PYTEST) smop_test/test_solver.py
+	#$(PYTEST) smop_test/test_primes.py
 
 	#make -B FLAGS=     liboctave.py	
 	#$(COVERAGE) run -p main.py solver.m

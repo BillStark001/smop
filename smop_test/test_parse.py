@@ -1,6 +1,7 @@
 import unittest
-import parse
-import node
+from smop import parse
+from smop import node
+
 
 class TestParse(unittest.TestCase):
     def test_p03(self):
@@ -36,6 +37,7 @@ class TestParse(unittest.TestCase):
 #        """
 #        t = parse.parse(s)
 #        self.assert_(t)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,6 +39,7 @@ precedence = (
     ("nonassoc", "LPAREN", "RPAREN", "RBRACE", "LBRACE"),
     ("left", "FIELD", "DOT", "PLUSPLUS", "MINUSMINUS"), )
 
+
 def p_top(p):
     """
     top :
@@ -77,6 +78,7 @@ def p_arg1(p):
     """
     # a hack to support "clear global"
     p[0] = node.string(value=str(p[1]), lineno=p.lineno(1), lexpos=p.lexpos(1))
+
 
 @exceptions
 def p_arg_list(p):
@@ -351,7 +353,7 @@ def p_expr2(p):
             if isinstance(p[1], node.matrix):
                 # TBD: mark idents as "P" - persistent
                 if p[3].__class__ not in (node.ident, node.funcall
-                                          ):  #, p[3].__class__
+                                          ):  # , p[3].__class__
                     raise_exception(SyntaxError,
                                     "multi-assignment",
                                     new_lexer)
@@ -414,7 +416,6 @@ def p_expr_ident(p):
         defs=None,
         props=None,
         init=None)
-
 
 
 @exceptions
@@ -514,11 +515,13 @@ def p_for_stmt(p):
     """
     if len(p) == 8:
         if not isinstance(p[2], node.ident):
-            raise_exception(SyntaxError, "Not implemented: for loop", new_lexer)
+            raise_exception(
+                SyntaxError, "Not implemented: for loop", new_lexer)
         p[2].props = "I"  # I= for-loop iteration variable
         p[0] = node.for_stmt(ident=p[2], expr=p[4], stmt_list=p[6])
 
 # function
+
 
 def p_func_head(p):
     """
@@ -548,7 +551,8 @@ def p_func_head(p):
         modif = p[4]
     else:
         assert 0, "func head len %d" % len(p)
-    p[0] = node.func_stmt(ident=fname, ret=ret, modif=modif, args=None, stmt_list=None, use_nargin=0)
+    p[0] = node.func_stmt(ident=fname, ret=ret, modif=modif,
+                          args=None, stmt_list=None, use_nargin=0)
 
 
 @exceptions
@@ -560,25 +564,26 @@ def p_func_stmt(p):
     # marked with XYZZY
     global use_nargin, use_varargin
     use_varargin = use_nargin = 0
-    
+
     assert isinstance(p[1], node.func_stmt)
     p[0] = p[1]
-    
+
     if len(p) == 5:
         assert isinstance(p[3], node.stmt_list)
         p[0].args = node.expr_list()
-        p[0].stmt_list=p[3]
-        
+        p[0].stmt_list = p[3]
+
     elif len(p) == 6:
         assert isinstance(p[2], node.expr_list)
         assert isinstance(p[4], node.stmt_list)
-        p[0].args=p[2]
-        p[0].stmt_list=p[4]
-        
+        p[0].args = p[2]
+        p[0].stmt_list = p[4]
+
     else:
-        assert 0, "Unexpected function statement length %d" %len(p)
+        assert 0, "Unexpected function statement length %d" % len(p)
 
     p[0].use_nargin = use_nargin
+
 
 @exceptions
 def p_funcall_expr(p):
@@ -872,8 +877,8 @@ def p_error(p):
     raise_exception(SyntaxError,
                     ('Unexpected "%s" (parser)' % p.value),
                     new_lexer)
-    
-    
+
+
 # func args
 
 @exceptions
@@ -885,7 +890,8 @@ def p_fa_1(p):
     p[0] = node.func_arg_restr(dim=None, cls=None, val=None, defVal=None)
     if len(p) == 5:
         p[0].dim = p[3]
-        
+
+
 @exceptions
 def p_fa_2(p):
     """
@@ -907,7 +913,8 @@ def p_fa_2(p):
         pass
     else:
         assert 0, "fa_2 len %d" % len(p)
-        
+
+
 @exceptions
 def p_func_arg_restr(p):
     """
@@ -922,7 +929,8 @@ def p_func_arg_restr(p):
         pass
     else:
         assert 0, "func_arg_restr len %d" % len(p)
-        
+
+
 @exceptions
 def p_func_arg_list(p):
     """
@@ -940,6 +948,7 @@ def p_func_arg_list(p):
     else:
         assert 0, "func_arg_list len %d" % len(p)
 
+
 @exceptions
 def p_func_args(p):
     """
@@ -955,6 +964,7 @@ def p_func_args(p):
 
 # classdef
 
+
 @exceptions
 def p_class_props(p):
     "class_props : CLASSDEF_PROPS SEMI stmt_list END_CLASSDEF_PROPS\n| CLASSDEF_PROPS lambda_args SEMI stmt_list END_CLASSDEF_PROPS"
@@ -965,7 +975,7 @@ def p_class_props(p):
         restrs = None
         stmt = p[3]
     p[0] = node.class_props(stmt_list=stmt, restrs=restrs)
-    
+
 
 @exceptions
 def p_class_methods(p):
@@ -977,7 +987,7 @@ def p_class_methods(p):
         restrs = None
         stmt = p[3]
     p[0] = node.class_methods(stmt_list=stmt, restrs=restrs)
-    
+
 
 @exceptions
 def p_class_events(p):
@@ -997,6 +1007,7 @@ def p_super_class_list(p):
         assert 0, "classdef superclass %d" % len(p)
     assert isinstance(p[0], node.expr_list)
 
+
 @exceptions
 def p_classdef_head_args(p):
     "classdef_head_args : CLASSDEF \n| CLASSDEF lambda_args"
@@ -1006,15 +1017,18 @@ def p_classdef_head_args(p):
         p_args = None
     else:
         assert 0, "classdef head %d" % len(p)
-    p[0] = node.classdef_stmt(attrs=p_args, name=None, super=None, props=None, methods=None, events=None, ctor=None)
-    
+    p[0] = node.classdef_stmt(attrs=p_args, name=None, super=None,
+                              props=None, methods=None, events=None, ctor=None)
+
+
 @exceptions
 def p_classdef_head(p):
     """
     classdef_head : classdef_head_args ident SEMI
                   | classdef_head_args ident LT super_class_list SEMI
     """
-    assert isinstance(p[1], node.classdef_stmt), "classdef_head type %s" % type(p[1])
+    assert isinstance(
+        p[1], node.classdef_stmt), "classdef_head type %s" % type(p[1])
     p[0] = p[1]
     if len(p) == 4:
         p[0].name = p[2]
@@ -1024,15 +1038,18 @@ def p_classdef_head(p):
     else:
         assert 0, "classdef stmt %d" % len(p)
 
+
 @exceptions
 def p_classdef_stmt(p):
     """
     classdef_stmt : classdef_head stmt_list END_CLASSDEF
     """
-    assert isinstance(p[1], node.classdef_stmt), "classdef_stmt type %s" % type(p[1])
+    assert isinstance(
+        p[1], node.classdef_stmt), "classdef_stmt type %s" % type(p[1])
     p[0] = p[1]
-    assert isinstance(p[2], node.stmt_list), "classdef_stmt list type %s" % type(p[2])
-    # TODO reform 
+    assert isinstance(
+        p[2], node.stmt_list), "classdef_stmt list type %s" % type(p[2])
+    # TODO reform
     stmt_uncat = []
     for stmt in p[2]:
         if isinstance(stmt, node.class_props):
@@ -1048,7 +1065,9 @@ def p_classdef_stmt(p):
 
 # main parser
 
+
 parser = yacc.yacc(start="top")
+
 
 @exceptions
 def parse(buf):
@@ -1081,4 +1100,3 @@ def parse(buf):
 #    if "2" in options.debug:
 #        for i,pi in enumerate(p):
 #            print i,pi.__class__.__name__,str(pi)[:50]
-

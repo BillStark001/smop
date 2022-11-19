@@ -319,8 +319,8 @@ def new():
         # a space between a func name and the arguments
         pass
 
-    tend = r"(?<=[])}'\".]|\w)"
-    tbeg = r"(?=[-+]?([[({'\"]|\w|\.\d))"
+    tend = r"(?<=[\])}'\".]|\w)"
+    tbeg = r"(?=[-+]?([\[({'\"]|\w|\.\d))"
 
     @TOKEN(tend + ws1 + tbeg)
     def t_matrix_FOO(t):
@@ -385,27 +385,3 @@ def raise_exception(error_type, message, my_lexer):
                                my_lexer.lineno,
                                1 + my_lexer.lexpos - startpos,
                                my_lexer.lexdata[startpos:endpos]))
-
-
-def main():
-    lexer = new()
-    line = ""
-    while 1:
-        try:
-            line += raw_input("=>> ").decode("string_escape")
-            print(len(line), [c for c in line])
-        except EOFError:
-            reload(sys.modules["lexer.py"])
-            lexer.input(line)
-            print(list(tok for tok in lexer))
-            line = ""
-
-
-if __name__ == "__main__":
-    options.testing_mode = 0
-    options.debug_lexer = 0
-    lexer = new()
-    buf = open(sys.argv[1]).read()
-    lexer.input(buf)
-    for tok in lexer:
-        print(tok)

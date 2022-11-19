@@ -3,6 +3,7 @@
     "classdef",
     "modif",
     "restr",
-    "restrs"
+    "restrs",
+    "SMOP"
   ]
 }

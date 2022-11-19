@@ -8,23 +8,25 @@ import tempfile
 import fnmatch
 import tarfile
 import sys
-import os
-import traceback
 from os.path import basename, splitext
+import traceback
 
-from . import options
-from . import parse
-from . import resolve
-from . import backend
-from . import version
+from smop.options import options
+from smop import parse
+from smop import resolve
+from smop import backend
+from smop import meta
+from smop import tasks
+
 
 def print_header(fp):
     if options.no_header:
         return
     #print("# Running Python %s" % sys.version, file=fp)
-    print("# Generated with SMOP ", version.__version__, file=fp)
+    print("# Generated with SMOP ", meta.__version__, file=fp)
     print("from libsmop import *", file=fp)
     print("#", options.filename, file=fp)
+
 
 def main():
     if "M" in options.debug:
@@ -55,24 +57,22 @@ def main():
                 if options.verbose:
                     print("\tExcluded: '%s'" % options.filename)
                 continue
-            buf = open(options.filename).read()
-            buf = buf.replace("\r\n", "\n")
-            # FIXME buf = buf.decode("ascii", errors="ignore")
-            stmt_list = parse.parse(buf if buf[-1] == '\n' else buf + '\n')
-
-            if not stmt_list:
-                continue
-            if not options.no_resolve:
-                G = resolve.resolve(stmt_list)
-            if not options.no_backend:
-                s = backend.backend(stmt_list)
+            buf = tasks.read(options.filename)
+            ret = tasks.convert(
+                buf, 
+                do_backend=not options.no_backend, 
+                do_resolve=not options.no_resolve
+                )
+            
             if not options.output:
-                f = splitext(basename(options.filename))[0] + ".py"
-                with open(f, "w") as fp:
-                    print_header(fp)
-                    fp.write(s)
+                output_name = tasks.rename_basename(options.filename)
+                output_path = output_name # TODO
+                if not options.no_header:
+                    ret = tasks.get_header(options.filename)
+                tasks.write(output_path, ret)
             else:
-                fp.write(s)
+                fp.write(ret)
+                
         except KeyboardInterrupt:
             break
         except:

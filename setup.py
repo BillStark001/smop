@@ -1,7 +1,7 @@
 import os
 from setuptools import setup
 
-from smop.version import __version__ as __VERSION__
+from smop.meta import __version__ as __VERSION__
 
 #try:
 #    __VERSION__ = os.popen("git describe --tags").read().strip()

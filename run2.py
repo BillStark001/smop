@@ -1,4 +1,5 @@
-from smop import lexer, options
+from smop import lexer
+from smop.options import options
 import sys
 
 if __name__ == "__main__":

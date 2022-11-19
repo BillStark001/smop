@@ -5,7 +5,7 @@ import sys
 import re
 import ply.lex as lex
 from ply.lex import TOKEN
-from . import options
+from smop.options import options
 
 
 tokens = [
@@ -16,14 +16,14 @@ tokens = [
     "MINUSEQ", "MUL", "MULEQ", "NE", "NEG", "NUMBER", "OR", "OREQ", "OROR",
     "PLUS", "PLUSEQ", "PLUSPLUS", "RBRACE", "RBRACKET", "RPAREN", "SEMI",
     "STRING", "TRANSPOSE", "ERROR_STMT", "COMMENT", "END_FUNCTION",
-    "END_UNEXPECTED", "POW", 
+    "END_UNEXPECTED", "POW",
 ] + ["END_CLASSDEF"]
 
 reserved = {
     "break": "BREAK",
     "case": "CASE",
     "catch": "CATCH",
-    "classdef": "CLASSDEF", 
+    "classdef": "CLASSDEF",
     "continue": "CONTINUE",
     "else": "ELSE",
     "elseif": "ELSEIF",
@@ -43,10 +43,10 @@ reserved = {
 }
 
 class_reserved = {
-    "properties": "CLASSDEF_PROPS", 
-    "methods": "CLASSDEF_METHODS", 
-    "events": "CLASSDEF_EVENTS", 
-    "enumeration": "CLASSDEF_ENUMS", 
+    "properties": "CLASSDEF_PROPS",
+    "methods": "CLASSDEF_METHODS",
+    "events": "CLASSDEF_EVENTS",
+    "enumeration": "CLASSDEF_ENUMS",
 }
 
 func_reserved = {
@@ -103,14 +103,14 @@ def new():
 
     states = (("matrix", "inclusive"), ("afterkeyword", "exclusive"))
 
-    ws = r"(\s|\.\.\..*\n|\\\n)" # spaces or equivalent tokens
+    ws = r"(\s|\.\.\..*\n|\\\n)"  # spaces or equivalent tokens
     #ws  = r"(\s|(\#|(%[^!])).*\n|\.\.\..*\n|\\\n)"
-    ws1 = ws + "+" # 1 or more spaces
-    ws0 = ws + "*" # spaces or no space
+    ws1 = ws + "+"  # 1 or more spaces
+    ws0 = ws + "*"  # spaces or no space
     ms = r"'([^']|(''))*'"
     os = r'"([^"\a\b\f\r\t\0\v\n\\]|(\\[abfn0vtr\"\n\\])|(""))*"'
     mos = "(%s)|(%s)" % (os, ms)
-    id = r"[a-zA-Z_][a-zA-Z_0-9]*" # name literals
+    id = r"[a-zA-Z_][a-zA-Z_0-9]*"  # name literals
 
     def unescape(s):
         if s[0] == "'":
@@ -166,23 +166,23 @@ def new():
             # is illegal, but foo.return=1 is fine.
             t.type = "FIELD"
             return t
-        
+
         if t.value in class_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'classdef':
             t.type = class_reserved[t.value]
             t.lexer.stack.append(t.value)
             return t
-        
+
         if t.value in func_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'function':
             t.type = func_reserved[t.value]
             t.lexer.stack.append(t.value)
             return t
-        
+
         # end expression
         if (t.value == "end" and (t.lexer.parens > 0 or t.lexer.brackets > 0 or
                                   t.lexer.braces > 0)):
             t.type = "END_EXPR"
             return t
-        
+
         # end block
         if t.value in ("end", "endif", "endfunction", "endwhile", "endfor",
                        "endswitch", "end_try_catch"):
@@ -190,7 +190,7 @@ def new():
                 t.type = "END_UNEXPECTED"
                 return t
                 # raise_exception(SyntaxError, "unmatched END token: %s" % t.value, t.lexer)
-            
+
             keyword = t.lexer.stack.pop()  # if,while,etc.
             #assert keyword == t.value or keyword == "try"
             if keyword == "function":

@@ -2,9 +2,8 @@ import sys
 import pickle
 import networkx as nx
 
-from . import node
-from . import resolve
-from . node import extend
+from smop import node
+from smop.node import extend
 
 
 @extend(node.node)

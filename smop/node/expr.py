@@ -1,6 +1,5 @@
 from smop.node.base import *
 
-
 ########################## EXPR
 
 class expr(node, recordtype("expr", "op args")):

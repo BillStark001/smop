@@ -3,8 +3,8 @@
 
 import copy
 
-from . import node
-from . node import extend
+from smop import node
+from smop.common import extend
 
 
 def graphviz(t, fp, func_name):

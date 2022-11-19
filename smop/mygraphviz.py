@@ -3,7 +3,7 @@ import pickle
 import networkx as nx
 
 from smop import node
-from smop.node import extend
+from smop.common import extend
 
 
 @extend(node.node)

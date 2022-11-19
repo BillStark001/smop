@@ -10,7 +10,7 @@ func decl:  nargout=1 must be declared if function may return
 return value:  return (x,y,z)[:nargout] or return x
 """
 
-from smop.node import extend, exceptions
+from smop.common import extend
 from smop.options import options
 from smop import node
 import logging

@@ -3,7 +3,7 @@
 
 
 from smop.node.base import node
-from smop.node.base import decode, encode, postorder, extend, exceptions
+from smop.node.base import decode, encode, postorder
 
 
 # node definitions

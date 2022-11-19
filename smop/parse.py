@@ -5,7 +5,7 @@ from ply import yacc
 from . import lexer
 from . lexer import tokens, raise_exception
 from . import node
-from . node import exceptions
+from smop.common import exceptions
 from smop.options import options
 
 # ident properties (set in parse.py)

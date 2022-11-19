@@ -1,6 +1,6 @@
 import sys
 import argparse
-from typing import List, Dict, Tuple
+from typing import List, Dict, Set
 
 from textwrap import dedent
 
@@ -11,19 +11,18 @@ class Options:
 
     filelist: List[str]
     output: str
-    exclude: str
-    xfiles: List[str]
+    exclude: List[str]
+    xfiles: Set[str]
 
-    glob_pattern: str
-    archive: bool
-
-    debug: List[str]
-    debug_lexer: bool
-    debug_parser: bool
+    glob_pattern: bool # TODO useless
+    recurse: bool # TODO useless
+    archive: bool # TODO useless
+    
+    debug: str
 
     no_analysis: bool
     no_backend: bool
-    no_comments: bool
+    no_comments: bool # TODO useless
     no_resolve: bool
 
     no_header: bool
@@ -38,10 +37,20 @@ class Options:
     
     def __init__(self) -> None:
         self.filename = ""
+        self.debug_main = False
+        self.debug_lexer = False
+        self.debug_parser = False
+        self.xfiles = []
     
     def parse_args(self):
-        self.xfiles = self.exclude.split(",") if args.exclude else []
-        self.debug = self.debug.split(":") if args.debug else []
+        
+        self.exclude = self.exclude if self.exclude else []
+        self.xfiles = set(self.exclude)
+        
+        self.debug = self.debug.lower() if self.debug else ''
+        self.debug_main = 'm' in self.debug
+        self.debug_lexer = 'l' in self.debug
+        self.debug_parser = 'p' in self.debug
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -58,41 +67,50 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("-o", "--output", metavar="FILE.py", type=str, help="""
     Write the results to FILE.py.  Use -o- to send the results to the
     standard output.  If not specified explicitly, output file names are
-    derived from input file names by replacing ".m" with ".py".  For example,
-
+    derived from input file names by replacing ".m" with ".py".  
+    For example,
+    
         $ smop FILE1.m FILE2.m FILE3.m
-
+        
     generates files FILE1.py FILE2.py and FILE3.py
     """)
-
-    parser.add_argument("-x", "--exclude", metavar="FILE1.m,FILE2.m,FILE3.m", type=str, help="""
+    parser.add_argument("-x", "--exclude", nargs="*", 
+                        metavar="FILE1.m,FILE2.m,FILE3.m", type=str, help="""
     comma-separated list of files to ignore
     """)
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-r", "--recurse", action='store_true', help="""
+    Convert files recursively. If assigned true, the files and output
+    will be treated as folders.
+    Example:
+    
+        $ smop octave-4.0.2 -r""")
+    group.add_argument("-g", "--glob-pattern", action="store_true", help="""
+    Search files to convert applying unix glob pattern to the input file 
+    list or to files. 
+    Example:
+    
+        $ smop octave-4.0.2/*.m -g """)
+
 
     parser.add_argument("-V", '--version', action='version',
                         version=meta.__version__)
 
-    parser.add_argument("-g", "--glob-pattern", metavar="PATTERN", type=str, help="""
-    Apply unix glob pattern to the input file list or to files. For
-    example -g 'octave-4.0.2/*.m""")
+    
     parser.add_argument("-Z", "--archive", metavar="ARCHIVE.tar", help="""
     Read ".m" files from the archive; ignore other files.  Accepted
     format: "tar".  Accepted compression: "gzip", "bz2".
     """)
 
     parser.add_argument("-D", "--debug", help="""
-    Colon-separated codes.
-    M Main
-    L Lex
-    P Parse
+    Enable built-in debugging tools in corresponding stages if the 
+    following codes are assigned.
+        M: Main
+        L: Lex
+        P: Parse
     """)
-    parser.add_argument("-L", "--debug-lexer", action="store_true", help="""
-    enable built-in debugging tools
-    """)
-    parser.add_argument("-P", "--debug-parser", action="store_true", help="""
-    enable built-in debugging tools
-    """)
-
+    
     parser.add_argument("-A", "--no-analysis", action="store_true", help="""
     skip analysis
     """)
@@ -124,7 +142,8 @@ def make_parser() -> argparse.ArgumentParser:
     test suite.  When disabled, behaves like regular comments
     """)
 
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", action="store_true", help="""
+    Print extra information while converting""")
 
     return parser
 

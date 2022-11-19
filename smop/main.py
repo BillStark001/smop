@@ -1,14 +1,15 @@
 # SMOP -- Simple Matlab/Octave to Python compiler
 # Copyright 2011-2016 Victor Leikehman
 
-from __future__ import print_function
+from typing import Optional
+from io import TextIOBase
 
 import py_compile
 import tempfile
 import fnmatch
 import tarfile
 import sys
-from os.path import basename, splitext
+import os
 import traceback
 
 from smop.options import options
@@ -18,69 +19,77 @@ from smop import backend
 from smop import meta
 from smop import tasks
 
-
-def print_header(fp):
-    if options.no_header:
+def convert(finfo: tasks.FileInfo, 
+          i: int = -1, fp: Optional[TextIOBase] = None):
+    options.filename = finfo.input_name
+    
+    if options.verbose:
+        print(f"Parsing: '{finfo.input_disp} -> {finfo.output_disp} (#{i})")
+        
+    if not options.filename.endswith(".m"):
+        print(f"\tIgnored: '{finfo.input_disp}' (unexpected file type)")
         return
-    #print("# Running Python %s" % sys.version, file=fp)
-    print("# Generated with SMOP ", meta.__version__, file=fp)
-    print("from libsmop import *", file=fp)
-    print("#", options.filename, file=fp)
-
+    
+    buf = tasks.read(options.filename)
+    ret = tasks.convert(
+        buf, 
+        do_backend=not options.no_backend, 
+        do_resolve=not options.no_resolve
+        )
+    
+    if not options.no_header:
+        ret = tasks.get_header(options.filename) + ret
+    
+    if not fp:
+        os.makedirs(os.path.dirname(finfo.output_name))
+        tasks.write(finfo.output_name, ret)
+    else:
+        fp.write(ret)
+    
 
 def main():
-    if "M" in options.debug:
+    
+    if options.debug_main:
+        # debug mode activated
         import pdb
         pdb.set_trace()
+    
     if not options.filelist:
+        # no input assigned
         options.parser.print_help()
         return
+    
+    fp: Optional[TextIOBase] = None
+    nr_err: int = 0
+    
     if options.output == "-":
         fp = sys.stdout
     elif options.output:
-        fp = open(options.output, "w")
-    else:
-        fp = None
-    if fp:
-        print_header(fp)
-
-    nerrors = 0
-    for i, options.filename in enumerate(options.filelist):
         try:
-            if options.verbose:
-                print(i, options.filename)
-            if not options.filename.endswith(".m"):
-                print("\tIgnored: '%s' (unexpected file type)" %
-                      options.filename)
-                continue
-            if basename(options.filename) in options.xfiles:
+            fp = open(options.output, "w")
+        except:
+            nr_err += 1
+            print("ERROR --output") # TODO format
+
+    filelist, should_exclude = tasks.get_filelist(options)
+    
+    for i, finfo in enumerate(filelist):
+        try:
+            if should_exclude(finfo.input_name):
                 if options.verbose:
-                    print("\tExcluded: '%s'" % options.filename)
+                    print(f"\tExcluded: '{finfo.input_disp}'")
                 continue
-            buf = tasks.read(options.filename)
-            ret = tasks.convert(
-                buf, 
-                do_backend=not options.no_backend, 
-                do_resolve=not options.no_resolve
-                )
             
-            if not options.output:
-                output_name = tasks.rename_basename(options.filename)
-                output_path = output_name # TODO
-                if not options.no_header:
-                    ret = tasks.get_header(options.filename)
-                tasks.write(output_path, ret)
-            else:
-                fp.write(ret)
+            convert(finfo, i=i, fp=fp)
                 
         except KeyboardInterrupt:
             break
         except:
-            nerrors += 1
+            nr_err += 1
             traceback.print_exc(file=sys.stdout)
             if options.strict:
                 break
         finally:
             pass
-    if nerrors:
-        print("Errors:", nerrors)
+    if nr_err:
+        print("Errors:", nr_err)

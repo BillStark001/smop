@@ -1071,7 +1071,7 @@ parser = yacc.yacc(start="top")
 
 @exceptions
 def parse(buf):
-    if "P" in options.debug:
+    if options.debug_parser:
         import pdb
         pdb.set_trace()
     global new_lexer  # used in main.main()
@@ -1079,7 +1079,7 @@ def parse(buf):
     p = parser.parse(
         buf, tracking=1, debug=options.debug_parser, lexer=new_lexer)
 
-    if "P" in options.debug:
+    if options.debug_parser:
         for i, pi in enumerate(p):
             print(i, pi.__class__.__name__, pi._backend())
 

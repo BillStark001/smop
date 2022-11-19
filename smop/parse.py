@@ -39,6 +39,8 @@ precedence = (
     ("nonassoc", "LPAREN", "RPAREN", "RBRACE", "LBRACE"),
     ("left", "FIELD", "DOT", "PLUSPLUS", "MINUSMINUS"), )
 
+use_nargin = False
+use_varargin = False
 
 def p_top(p):
     """
@@ -251,6 +253,7 @@ def p_expr(p):
             | expr2
             | expr1
             | lambda_expr
+            | funcall_expr
             | expr PLUSPLUS
             | expr MINUSMINUS
     """
@@ -404,9 +407,9 @@ def p_expr_ident(p):
     "ident : IDENT"
     global use_nargin, use_varargin
     if p[1] == "varargin":
-        use_varargin = 1
+        use_varargin = True
     if p[1] == "nargin":
-        use_nargin = 1
+        use_nargin = True
     # import pdb; pdb.set_trace()
     p[0] = node.ident(
         name=p[1],
@@ -552,7 +555,8 @@ def p_func_head(p):
     else:
         assert 0, "func head len %d" % len(p)
     p[0] = node.func_stmt(ident=fname, ret=ret, modif=modif,
-                          args=None, stmt_list=None, use_nargin=0)
+                          args=None, stmt_list=None, 
+                          use_nargin=False, use_varargin=False)
 
 
 @exceptions
@@ -563,7 +567,9 @@ def p_func_stmt(p):
     # stmt_list of func_stmt is set below
     # marked with XYZZY
     global use_nargin, use_varargin
-    use_varargin = use_nargin = 0
+    _un = use_nargin
+    _uv = use_varargin
+    use_varargin = use_nargin = False
 
     assert isinstance(p[1], node.func_stmt)
     p[0] = p[1]
@@ -583,15 +589,19 @@ def p_func_stmt(p):
         assert 0, "Unexpected function statement length %d" % len(p)
 
     p[0].use_nargin = use_nargin
+    p[0].use_varargin = use_varargin
+    use_nargin = _un
+    use_varargin = _uv
 
     
 
 @exceptions
 def p_funcall_expr(p):
-    """expr : expr LPAREN expr_list RPAREN
-            | expr LPAREN RPAREN
-            | expr HANDLE expr LPAREN expr_list RPAREN
-            | expr HANDLE expr LPAREN RPAREN
+    """
+    funcall_expr : expr LPAREN expr_list RPAREN
+                 | expr LPAREN RPAREN
+                 | expr HANDLE ident LPAREN expr_list RPAREN
+                 | expr HANDLE ident LPAREN RPAREN
     """
     
     def ravel_func(p3):

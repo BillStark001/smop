@@ -60,7 +60,7 @@ tokens += list(func_reserved.values())
 tokens += ["END_" + x for x in func_reserved.values()]
 
 
-def new():
+def new() -> lex.lex:
     t_AND = r"\&"
     t_ANDAND = r"\&\&"
     t_ANDEQ = r"\&="

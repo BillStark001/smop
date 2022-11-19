@@ -1,6 +1,7 @@
-from typing import Dict, Any
+from typing import Dict, Any, Generator
 
 import copy
+
 from smop.recipes import recordtype
 from smop.common import extend
 from collections import namedtuple
@@ -28,14 +29,6 @@ def decode(self):
 
 def encode(s):
     return "".join(c+"_" if c.isupper() or c == "_" else c.upper() for c in s)
-
-
-def postorder(u):
-    if isinstance(u, node):
-        for v in u:
-            for t in postorder(v):
-                yield t
-        yield u  # returns only traversible objects
 
 
 class node(object):
@@ -85,7 +78,15 @@ class node(object):
         raise AttributeError("_backend")
     
     def is_const(self) -> bool:
-        return False
+        raise AttributeError("is_const")
+
+
+def postorder(u: node) -> Generator[node, None, None]:
+    if isinstance(u, node):
+        for v in u:
+            for t in postorder(v):
+                yield t
+        yield u  # returns only traversible objects
 
 
 @extend(node)

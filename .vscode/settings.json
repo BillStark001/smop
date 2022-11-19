@@ -2,8 +2,10 @@
   "cSpell.words": [
     "classdef",
     "modif",
+    "postorder",
     "restr",
     "restrs",
-    "SMOP"
+    "SMOP",
+    "Symtab"
   ]
 }

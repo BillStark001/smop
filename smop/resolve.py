@@ -18,7 +18,8 @@ instances, which possibly define the variable.
 It is used in if_stmt, for_stmt, and while_stmt.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from io import TextIOBase
 
 import copy
 import networkx as nx
@@ -26,9 +27,9 @@ import networkx as nx
 from smop import node
 from smop.common import extend
 
-D = Dict[str, Any]
+Symtab = Dict[str, Any]
 
-def as_networkx(t):
+def as_networkx(t: node.node) -> nx.DiGraph:
     G = nx.DiGraph()
     for u in node.postorder(t):
         if u.__class__ in (node.ident, node.param):
@@ -47,10 +48,14 @@ def as_networkx(t):
     return G
 
 
-def resolve(t, symtab=None, fp=None, func_name=None) -> nx.DiGraph:
+def resolve(
+    t: node.node, 
+    symtab: Optional[Symtab] = None) -> nx.DiGraph:
+    
     if symtab is None:
         symtab = {}
     do_resolve(t, symtab)
+    
     G = as_networkx(t)
     for n in G.nodes():
         
@@ -59,7 +64,6 @@ def resolve(t, symtab=None, fp=None, func_name=None) -> nx.DiGraph:
             pass
         elif G.out_edges(n) and G.in_edges(n):
             u.props = "U"  # upd
-            #print u.name, u.lineno, u.column
         elif G.in_edges(n):
             u.props = "D"  # def
         elif G.out_edges(n):
@@ -70,21 +74,22 @@ def resolve(t, symtab=None, fp=None, func_name=None) -> nx.DiGraph:
     return G
 
 
-def do_resolve(t, symtab: D):
+def do_resolve(t, symtab: Symtab):
     t._resolve(symtab)
 
 
-def copy_symtab(symtab: D) -> D:
+def copy_symtab(symtab: Symtab) -> Symtab:
     new_symtab = copy.copy(symtab)
     for k, v in new_symtab.items():
         new_symtab[k] = copy.copy(v)
     return new_symtab
 
+# extensions
 
 @extend(node.arrayref)
 @extend(node.cellarrayref)
 @extend(node.funcall)
-def _lhs_resolve(self: node.node, symtab: D):
+def _lhs_resolve(self: node.node, symtab: Symtab):
     # Definitely lhs array indexing.  It's both a ref and a def.
     # Must properly handle cases such as foo(foo(17))=42
     # Does the order of A and B matter?
@@ -94,22 +99,22 @@ def _lhs_resolve(self: node.node, symtab: D):
 
 
 @extend(node.expr)
-def _lhs_resolve(self: node.node, symtab: D):
+def _lhs_resolve(self: node.node, symtab: Symtab):
     if self.op == ".":  # see setfield
         self.args._resolve(symtab)
         self.args[0]._lhs_resolve(symtab)
     elif self.op == "[]":
         for arg in self.args:
             arg._lhs_resolve(symtab)
-
+
 
 @extend(node.expr_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.expr._resolve(symtab)
-
+
 
 @extend(node.for_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     symtab_copy = copy_symtab(symtab)
     self.ident._lhs_resolve(symtab)
     self.expr._resolve(symtab)
@@ -118,44 +123,44 @@ def _resolve(self: node.node, symtab: D):
     # Handle the case where FOR loop is not executed
     for k, v in symtab_copy.items():
         symtab.setdefault(k, []).append(v)
-
+
 
 @extend(node.func_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     if self.ident:
         self.ident._resolve(symtab)
     self.args._lhs_resolve(symtab)
     self.ret._resolve(symtab)
-
+
 
 @extend(node.global_list)
 @extend(node.concat_list)
 @extend(node.expr_list)
-def _lhs_resolve(self: node.node, symtab: D):
+def _lhs_resolve(self: node.node, symtab: Symtab):
     for expr in self:
         expr._lhs_resolve(symtab)
-
+
 
 @extend(node.global_list)
 @extend(node.concat_list)
 @extend(node.expr_list)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     for expr in self:
         expr._resolve(symtab)
-
+
 
 @extend(node.global_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.global_list._lhs_resolve(symtab)
-
+
 
 @extend(node.ident)
-def _lhs_resolve(self: node.node, symtab: D):
+def _lhs_resolve(self: node.node, symtab: Symtab):
     symtab[self.name] = [self]
-
+
 
 @extend(node.if_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     symtab_copy = copy_symtab(symtab)
     self.cond_expr._resolve(symtab)
     self.then_stmt._resolve(symtab)
@@ -163,42 +168,42 @@ def _resolve(self: node.node, symtab: D):
         self.else_stmt._resolve(symtab_copy)
     for k, v in symtab_copy.items():
         symtab.setdefault(k, []).append(v)
-
+
 
 @extend(node.let)
-def _lhs_resolve(self: node.node, symtab: D):
+def _lhs_resolve(self: node.node, symtab: Symtab):
     self.args._resolve(symtab)
     self.ret._lhs_resolve(symtab)
-
+
 
 @extend(node.let)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.args._resolve(symtab)
     self.ret._lhs_resolve(symtab)
-
+
 
 @extend(node.null_stmt)
 @extend(node.continue_stmt)
 @extend(node.break_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     pass
-
 
+"""
 @extend(node.setfield)  # a subclass of funcall
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.func_expr._resolve(symtab)
     self.args._resolve(symtab)
     self.args[0]._lhs_resolve(symtab)
-
+"""
 
 @extend(node.try_catch)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.try_stmt._resolve(symtab)
     self.catch_stmt._resolve(symtab)  # ???
-
+
 
 @extend(node.ident)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     if self.defs is None:
         self.defs = []
     try:
@@ -206,12 +211,12 @@ def _resolve(self: node.node, symtab: D):
     except KeyError:
         # defs == set() means name used, but not defined
         pass
-
+
 
 @extend(node.arrayref)
 @extend(node.cellarrayref)
 @extend(node.funcall)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     # Matlab does not allow foo(bar)(bzz), so func_expr is usually
     # an ident, though it may be a field or a dot expression.
     if self.func_expr:
@@ -219,18 +224,18 @@ def _resolve(self: node.node, symtab: D):
     self.args._resolve(symtab)
     #if self.ret:
     #    self.ret._lhs_resolve(symtab)
-
+
 
 @extend(node.expr)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     for expr in self.args:
         expr._resolve(symtab)
-
+
 
 @extend(node.number)
 @extend(node.string)
 @extend(node.comment_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     pass
 
 # @extend(node.call_stmt)
@@ -241,23 +246,23 @@ def _resolve(self: node.node, symtab: D):
 #     self.func_expr._resolve(symtab) # A
 #     self.args._resolve(symtab)      # B
 #     self.ret._lhs_resolve(symtab)
-
+
 
 @extend(node.return_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.ret._resolve(symtab)
     #symtab.clear()
 
 
 @extend(node.stmt_list)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     for stmt in self:
         stmt._resolve(symtab)
 
 
 @extend(node.where_stmt)  # FIXME where_stmt ???
 @extend(node.while_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     symtab_copy = copy_symtab(symtab)
     self.cond_expr._resolve(symtab)
     self.stmt_list._resolve(symtab)
@@ -269,14 +274,14 @@ def _resolve(self: node.node, symtab: D):
 
 
 @extend(node.function)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     self.head._resolve(symtab)
     self.body._resolve(symtab)
     self.head.ret._resolve(symtab)
 
 
 @extend(node.classdef_stmt)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     if self.name:
         self.name._resolve(symtab)
     if self.attrs:
@@ -292,6 +297,6 @@ def _resolve(self: node.node, symtab: D):
 
 
 @extend(node.func_args)
-def _resolve(self: node.node, symtab: D):
+def _resolve(self: node.node, symtab: Symtab):
     # TODO, FIXME
     print("TODO func_args _resolve")

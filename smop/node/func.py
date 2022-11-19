@@ -11,6 +11,7 @@ class func_stmt(stmt, recordtype("func_stmt",
                                 modif
                                 stmt_list
                                 use_nargin
+                                use_varargin
                                 """,
                                  default=None)):
     pass

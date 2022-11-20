@@ -3,6 +3,8 @@ from smop.node.base import *
 ########################## EXPR
 
 class expr(node, recordtype("expr", "op args")):
+    op: str
+    args: list
     def __str__(self):
         if self.op == ".":
             return "%s%s" % (str(self.args[0]), self.args[1])

@@ -168,7 +168,7 @@ def _backend(self: node.node, level: int = 0):
         return "%s or %s" % (self.args[0]._backend(),
                              self.args[1]._backend())
 
-    if self.op == '@':  # FIXMEj
+    if self.op == '@':  # FIXME
         return self.args[0]._backend()
 
     if self.op == "\\":
@@ -201,7 +201,7 @@ def _backend(self: node.node, level: int = 0):
         except:
             is_parens = False
         if not is_parens:
-            return "%s%s" % (self.args[0]._backend(),
+            return "%s.%s" % (self.args[0]._backend(),
                              self.args[1]._backend())
         else:
             return "getattr(%s,%s)" % (self.args[0]._backend(),
@@ -345,7 +345,7 @@ def _backend(self: node.node, level: int = 0):
                 ),
                     self.args._backend())
         except:
-            s += "%s%s = copy(%s)" % (self.ret.args[0]._backend(),
+            s += "%s.%s = copy(%s)" % (self.ret.args[0]._backend(),
                                       self.ret.args[1]._backend(),
                                       self.args._backend())
     elif (self.ret.__class__ is node.ident and
@@ -360,7 +360,7 @@ def _backend(self: node.node, level: int = 0):
 
 @extend(node.logical)
 def _backend(self: node.node, level: int = 0):
-    if self.value == 0:
+    if not self.value:
         return "false"
     else:
         return "true"

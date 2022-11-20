@@ -1,19 +1,27 @@
 from smop.node.base import *
 from smop.node.expr import *
 
+import json
+
 #####################
 #
 #  ATOMS
 
 class atom(node):
+    lineno: int
+    lexpos: int
     pass
 
 class string(atom, recordtype("string", "value lineno lexpos", default=None)):
+    
+    value: str
+    
     def __str__(self):
-        return "'%s'" % self.value
+        return json.dumps(self.value)
 
 class logical(atom, recordtype("logical", "value lineno lexpos", default=None)):
-    pass
+    def __str__(self):
+        return 'True' if self.value else 'False'
 
 class number(atom, recordtype("number", "value lineno lexpos", default=None)):
     def __str__(self):
@@ -21,6 +29,9 @@ class number(atom, recordtype("number", "value lineno lexpos", default=None)):
 
 class ident(atom, recordtype("ident", "name lineno column lexpos defs props init",
                              default=None)):
+    name: str
+    column: int
+    
     def __str__(self):
         return self.name
 

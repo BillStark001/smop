@@ -489,6 +489,7 @@ def p_field_expr(p):
     """
     expr : expr FIELD
     """
+    print(type(p[2]))
     p[0] = node.expr(
         op=".",
         args=node.expr_list([

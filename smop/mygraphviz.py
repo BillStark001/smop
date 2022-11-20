@@ -39,6 +39,24 @@ def _graphviz(self, fp):
              (id(self), self.__class__.__name__, self.name))
 
 
+
+def graphviz_rewrite(t, fp, func_name):
+    fp.write("digraph %s {\n" % func_name)
+    fp.write('graph [rankdir="LR"];\n')
+    for u in node.postorder(t):
+        if u.__class__ in (node.ident, node.param):
+            fp.write("%s [label=%s_%s_%s];\n" %
+                     (u.lexpos, u.name, u.lineno, u.column))
+            if u.defs:
+                for v in u.defs:
+                    fp.write("%s -> %s" % (u.lexpos, v.lexpos))
+                    if u.lexpos < v.lexpos:
+                        fp.write('[color=red]')
+                    # else:
+                    #    fp.write('[label=%s.%s]' % (v.lineno,v.column))
+                    fp.write(';\n')
+    fp.write("}\n")
+
 def graphviz(tree, fp):
     fp.write('''strict digraph g {
                 graph [rankdir="LR"];

@@ -4,6 +4,7 @@
 import sys
 import re
 import ply.lex as lex
+from ply.lex import LexToken
 from ply.lex import TOKEN
 from smop.options import options
 
@@ -60,7 +61,7 @@ tokens += list(func_reserved.values())
 tokens += ["END_" + x for x in func_reserved.values()]
 
 
-def new() -> lex.lex:
+def new():
     t_AND = r"\&"
     t_ANDAND = r"\&\&"
     t_ANDEQ = r"\&="
@@ -111,6 +112,7 @@ def new() -> lex.lex:
     os = r'"([^"\a\b\f\r\t\0\v\n\\]|(\\[abfn0vtr\"\n\\])|(""))*"'
     mos = "(%s)|(%s)" % (os, ms)
     id = r"[a-zA-Z_][a-zA-Z_0-9]*"  # name literals
+    id2 = r"(\.%s)?(%s)" % (ws0, id)
 
     def unescape(s):
         if s[0] == "'":
@@ -122,12 +124,12 @@ def new() -> lex.lex:
                 return s[1:-1]
 
     @TOKEN(mos)
-    def t_afterkeyword_STRING(t):
+    def t_afterkeyword_STRING(t: LexToken) -> LexToken:
         t.value = unescape(t.value)
         t.lexer.begin("INITIAL")
         return t
 
-    def t_afterkeyword_error(t):
+    def t_afterkeyword_error(t: LexToken) -> LexToken:
         t_error(t)
 
     # A quote, immediately following any of: (1) an alphanumeric
@@ -138,7 +140,7 @@ def new() -> lex.lex:
     # the term by line continuation (...), matlab starts a string, so
     # the above rule still holds.
 
-    def t_TRANSPOSE(t):
+    def t_TRANSPOSE(t: LexToken) -> LexToken:
         r"(?<=\w|\]|\)|\})((\.')|')+"
         # <---context ---><-quotes->
         # We let the parser figure out what that mix of quotes and
@@ -146,13 +148,13 @@ def new() -> lex.lex:
         return t
 
     @TOKEN(mos)
-    def t_STRING(t):
+    def t_STRING(t: LexToken) -> LexToken:
         t.value = unescape(t.value)
         return t
 
     # structures
-    @TOKEN(r"(\.%s)?%s" % (ws0, id))
-    def t_IDENT(t):
+    @TOKEN(id2)
+    def t_IDENT(t: LexToken) -> LexToken:
         # parfor is not supported programmatically in Python.
         # workarounds include thread pool etc.
         if t.value == "parfor":
@@ -160,11 +162,14 @@ def new() -> lex.lex:
         # if t.value == "classdef":
         #      raise_exception(SyntaxError, "Not implemented: %s" % t.value, t.lexer)
         t.lexer.lineno += t.value.count("\n")
-        if t.value[0] == ".":
+
+        field_res = re.search(id2, t.value)
+        if field_res.group(1):
             # Reserved words are not reserved
             # when used as fields.  So return=1
             # is illegal, but foo.return=1 is fine.
             t.type = "FIELD"
+            t.value = field_res.group(3)
             return t
 
         if t.value in class_reserved and len(t.lexer.stack) > 0 and t.lexer.stack[-1] == 'classdef':
@@ -218,18 +223,18 @@ def new() -> lex.lex:
                 t.lexer.begin("afterkeyword")
         return t
 
-    def t_LPAREN(t):
+    def t_LPAREN(t: LexToken) -> LexToken:
         r"\("
         t.lexer.parens += 1
         return t
 
-    def t_RPAREN(t):
+    def t_RPAREN(t: LexToken) -> LexToken:
         r"\)"
         t.lexer.parens -= 1
         return t
 
     @TOKEN(ws0 + r"\]")
-    def t_RBRACKET(t):  # compare w t_LBRACKET
+    def t_RBRACKET(t: LexToken) -> LexToken:  # compare w t_LBRACKET
         t.lexer.lineno += t.value.count("\n")
         t.lexer.brackets -= 1
         if t.lexer.brackets + t.lexer.braces == 0:
@@ -237,7 +242,7 @@ def new() -> lex.lex:
         return t
 
     @TOKEN(r"\[" + ws0)
-    def t_LBRACKET(t):  # compare w t_SEMI
+    def t_LBRACKET(t: LexToken) -> LexToken:  # compare w t_SEMI
         t.lexer.lineno += t.value.count("\n")
         t.lexer.brackets += 1
         if t.lexer.brackets + t.lexer.braces == 1:
@@ -246,7 +251,7 @@ def new() -> lex.lex:
 
     # maybe we need a dedicated CELLARRAY state ???
     @TOKEN(ws0 + r"\}")
-    def t_RBRACE(t):
+    def t_RBRACE(t: LexToken) -> LexToken:
         t.lexer.lineno += t.value.count("\n")
         t.lexer.braces -= 1
         if t.lexer.braces + t.lexer.brackets == 0:
@@ -254,7 +259,7 @@ def new() -> lex.lex:
         return t
 
     @TOKEN(r"\{" + ws0)
-    def t_LBRACE(t):
+    def t_LBRACE(t: LexToken) -> LexToken:
         t.lexer.lineno += t.value.count("\n")
         t.lexer.braces += 1
         if t.lexer.brackets + t.lexer.braces == 1:
@@ -262,7 +267,7 @@ def new() -> lex.lex:
         return t
 
     @TOKEN(r"," + ws0)
-    def t_COMMA(t):  # eating spaces is important inside brackets
+    def t_COMMA(t: LexToken) -> LexToken:  # eating spaces is important inside brackets
         t.lexer.lineno += t.value.count("\n")
         if (t.lexer.brackets == 0 and t.lexer.parens == 0 and
                 t.lexer.braces == 0):
@@ -271,13 +276,13 @@ def new() -> lex.lex:
         return t
 
     @TOKEN(r"\;" + ws0)
-    def t_SEMI(t):
+    def t_SEMI(t: LexToken) -> LexToken:
         t.lexer.lineno += t.value.count("\n")
         #        if t.lexer.brackets or t.lexer.braces > 0:
         #            t.type = "CONCAT"
         return t
 
-    def t_NUMBER(t):
+    def t_NUMBER(t: LexToken) -> LexToken:
         r"(0x[0-9A-Fa-f]+)|((\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?[ij]?)"
         #  <-------------> <------------------><------------->
         #   int,oct,hex        float               exp
@@ -286,7 +291,7 @@ def new() -> lex.lex:
         t.value = eval(t.value)
         return t
 
-    def t_NEWLINE(t):
+    def t_NEWLINE(t: LexToken) -> LexToken:
         r'\n+'
         t.lexer.lineno += len(t.value)
         if not t.lexer.parens and not t.lexer.braces:
@@ -294,12 +299,12 @@ def new() -> lex.lex:
             t.type = "SEMI"
             return t
 
-    def t_ERROR_STMT(t):
+    def t_ERROR_STMT(t: LexToken) -> LexToken:
         r"%!(error|warning|test).*\n"
         t.lexer.lineno += 1
 
     # keep multiline comments
-    def t_COMMENT(t):
+    def t_COMMENT(t: LexToken) -> LexToken:
         r"(^[ \t]*[%#][^!\n].*\n)+"
         t.lexer.lineno += t.value.count("\n")
         if not options.no_comments:
@@ -307,13 +312,13 @@ def new() -> lex.lex:
             return t
 
     # drop end-of-line comments
-    def t_comment(t):
+    def t_comment(t: LexToken) -> LexToken:
         r"(%|\#)!?"
         if not options.testing_mode or t.value[-1] != "!":
             t.lexer.lexpos = t.lexer.lexdata.find("\n", t.lexer.lexpos)
 
     @TOKEN(r"(?<=\w)" + ws1 + r"(?=\()")
-    def t_matrix_BAR(t):
+    def t_matrix_BAR(t: LexToken) -> LexToken:
         # Consume whitespace which follows end of name
         # and is followed a left paren.  This properly handles
         # a space between a func name and the arguments
@@ -323,7 +328,7 @@ def new() -> lex.lex:
     tbeg = r"(?=[-+]?([\[({'\"]|\w|\.\d))"
 
     @TOKEN(tend + ws1 + tbeg)
-    def t_matrix_FOO(t):
+    def t_matrix_FOO(t: LexToken) -> LexToken:
         # In matrix state, consume whitespace separating two
         # terms and return a fake COMMA token.  This allows
         # parsing [1 2 3] as if it was [1,2,3].  Handle
@@ -357,16 +362,16 @@ def new() -> lex.lex:
         t.type = "COMMA"
         return t
 
-    def t_ELLIPSIS(t):
+    def t_ELLIPSIS(t: LexToken) -> LexToken:
         r"\.\.\..*\n"
         t.lexer.lineno += 1
         pass
 
-    def t_SPACES(t):
+    def t_SPACES(t: LexToken) -> LexToken:
         r"(\\\n|[ \t\r])+"
         pass
 
-    def t_error(t):
+    def t_error(t: LexToken) -> LexToken:
         raise_exception(
             SyntaxError, ('Unexpected "%s" (lexer)' % t.value), t.lexer)
 

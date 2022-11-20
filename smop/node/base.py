@@ -33,6 +33,8 @@ def encode(s):
 
 class node(object):
     
+    __is_python_repr = False
+    
     def become(self, other):
         
         class Wrapper(self.__class__):
@@ -71,14 +73,20 @@ class node(object):
     def _type(self):
         raise AttributeError("_type")
 
-    def _resolve(self, symtab: Dict[str, Any]):
-        raise AttributeError("_resolve")
+    def _resolve(self, symtab: 'smop.resolve.symtab.Symtab'):
+        pass
 
     def _backend(self, level: int = 0) -> str:
         raise AttributeError("_backend")
     
     def is_const(self) -> bool:
-        raise AttributeError("is_const")
+        return False
+    
+    def is_python_repr(self) -> bool:
+        return self.__is_python_repr
+    
+    def set_is_python_repr(self, v: bool):
+        self.__is_python_repr = v
 
 
 def postorder(u: node) -> Generator[node, None, None]:
@@ -88,7 +96,3 @@ def postorder(u: node) -> Generator[node, None, None]:
                 yield t
         yield u  # returns only traversible objects
 
-
-@extend(node)
-def is_const(self):
-    return False

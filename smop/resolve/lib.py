@@ -31,22 +31,24 @@ def _resolve(self: node.expr, symtab: SymTab):
 
     if self.op == '.':
         assert len(self.args) == 2, 'resolve field expr len %d' % len(self.args)
-        assert isinstance(self.args[0], node.ident)
+
         sid = self.args[0]
         sfl = self.args[1]
 
         sid._resolve(symtab)
         sfl._resolve(symtab)
 
-        rec = symtab.find_or_create(sid.name)
-        rec.add_feature(sfl)
+        if isinstance(self.args[0], node.ident):
+            rec = symtab.find_or_create(sid.name)
+            rec.add_feature(sfl)
+        else:
+            pass  # TODO
         return
     elif self.op == '[]':
         raise Exception('NIE')
 
     for n in self.args:
         n._resolve(symtab)
-
 
 
 @extend(node.let)
@@ -116,6 +118,18 @@ def _resolve(self: node.node, symtab: SymTab):
     #     symtab.setdefault(k, []).append(v)
 
 
+@extend(node.where_stmt)  # FIXME where_stmt ???
+@extend(node.while_stmt)
+def _resolve(self: node.node, symtab: SymTab):
+    self.cond_expr._resolve(symtab)
+    self.stmt_list._resolve(symtab)
+    self.cond_expr._resolve(symtab)
+    self.stmt_list._resolve(symtab)
+    # Handle the case where WHILE loop is not executed
+    # for k, v in symtab_copy.items():
+    #     symtab.setdefault(k, []).append(v)
+
+
 @extend(node.if_stmt)
 def _resolve(self: node.node, symtab: SymTab):
     # symtab_copy = copy_symtab_dict(symtab)
@@ -132,7 +146,8 @@ def _resolve(self: node.node, symtab: SymTab):
     self.try_stmt._resolve(symtab)
     self.catch_stmt._resolve(symtab)  # ???
 
-# functiom
+# function
+
 
 @extend(node.func_stmt)
 def _resolve(self: node.func_stmt, symtab: SymTab):
@@ -153,7 +168,8 @@ def _resolve(self: node.func_stmt, symtab: SymTab):
             node.ident(name='varargin', lineno=-1, lexpos=-1, column=-1)
         )
 
-    self.stmt_list._resolve(symtab_inner)
+    if self.stmt_list:
+        self.stmt_list._resolve(symtab_inner)
     self.ret._resolve(symtab_inner)
 
 
@@ -172,23 +188,27 @@ def _resolve(self: node.node, symtab: SymTab):
     if self.attrs:
         self.attrs._resolve(symtab)
     self.super._resolve(symtab)
-    
+
     symtab_inner = SymTab(outer=symtab)
     self.sub._resolve(symtab_inner)
 
+
 @extend(node.class_props)
 def _resolve(self: node.class_props, symtab: SymTab):
-    pass # TODO expr_stmt
+    pass  # TODO expr_stmt
+
 
 @extend(node.class_methods)
 def _resolve(self: node.class_methods, symtab: SymTab):
-    pass # TODO func_stmt
+    pass  # TODO func_stmt
+
 
 @extend(node.class_events)
 def _resolve(self: node.class_events, symtab: SymTab):
-    pass # TODO since we haven't met any class events, postpone it
+    pass  # TODO since we haven't met any class events, postpone it
 
 # TODO
+
 
 @extend(node.global_list)
 @extend(node.concat_list)
@@ -244,18 +264,3 @@ def _resolve(self: node.node, symtab: SymTab):
 def _resolve(self: node.node, symtab: SymTab):
     for stmt in self:
         stmt._resolve(symtab)
-
-
-@extend(node.where_stmt)  # FIXME where_stmt ???
-@extend(node.while_stmt)
-def _resolve(self: node.node, symtab: SymTab):
-    symtab_copy = copy_symtab_dict(symtab)
-    self.cond_expr._resolve(symtab)
-    self.stmt_list._resolve(symtab)
-    self.cond_expr._resolve(symtab)
-    self.stmt_list._resolve(symtab)
-    # Handle the case where WHILE loop is not executed
-    for k, v in symtab_copy.items():
-        symtab.setdefault(k, []).append(v)
-
-

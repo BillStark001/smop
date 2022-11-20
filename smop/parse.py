@@ -433,7 +433,7 @@ def p_ident_init_opt(p):
     else:
         p[0] = p[1]
     if len(p) == 2:
-        p[0].init = node.ident(name="None")
+        p[0].init = None
     else:
         p[0].init = p[3]
 
@@ -589,6 +589,7 @@ def p_func_stmt(p):
     else:
         assert 0, "Unexpected function statement length %d" % len(p)
 
+    p[0].stmt_list = p[0].stmt_list or node.stmt_list()
     p[0].use_nargin = use_nargin
     p[0].use_varargin = use_varargin
     use_nargin = _un
@@ -990,10 +991,18 @@ def p_func_args(p):
 
 # classdef
 
-
+@exceptions
+def p_stmt_list_epsilon(p):
+    "stmt_list_epsilon : \n | stmt_list"
+    if len(p) == 1:
+        p[0] = node.stmt_list()
+    else:
+        p[0] = p[1]
+    
+    
 @exceptions
 def p_class_props(p):
-    "class_props : CLASSDEF_PROPS SEMI stmt_list END_CLASSDEF_PROPS\n| CLASSDEF_PROPS lambda_args SEMI stmt_list END_CLASSDEF_PROPS"
+    "class_props : CLASSDEF_PROPS SEMI stmt_list_epsilon END_CLASSDEF_PROPS\n| CLASSDEF_PROPS lambda_args SEMI stmt_list_epsilon END_CLASSDEF_PROPS"
     if len(p) == 6:
         restrs = p[2]
         stmt = p[4]

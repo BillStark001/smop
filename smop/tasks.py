@@ -86,6 +86,7 @@ def get_filelist(options: options.Options) -> Tuple[
         exclude = set([get_abs_norm_path(x) for x in options.xfiles])
         should_exclude = lambda f: basename(f) in exclude
         
+    filelist.sort(key=lambda x: x.input_name)
     return filelist, should_exclude
 
 # file       

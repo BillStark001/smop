@@ -1,10 +1,21 @@
+from typing import List, Optional
+
 from smop.node.base import *
 
 ########################## EXPR
 
-class expr(node, recordtype("expr", "op args")):
+# recordtype("expr", "op args")
+class expr(node):
     op: str
-    args: list
+    args: 'expr_list'
+    
+    def __init__(self, op: str, args: 'expr_list'):
+        assert op is not None and op.strip() != '', 'empty operator'
+        assert isinstance(args, expr_list), 'bad argument type'
+        self.op = op
+        self.args = args
+        
+    
     def __str__(self):
         if self.op == ".":
             return "%s%s" % (str(self.args[0]), self.args[1])
@@ -24,8 +35,12 @@ class expr(node, recordtype("expr", "op args")):
 
 
 class expr_list(node, list):
+    
+    def assert_len(self, l: int, info: Optional[str] = None):
+        assert len(self) == l, info or 'wrong length: %d' % len(self)
+    
     def __str__(self):
-        return ",".join([str(t) for t in self])
+        return ", ".join([str(t) for t in self])
 
     def __repr__(self):
         return "expr_list(%s)" % list.__repr__(self)

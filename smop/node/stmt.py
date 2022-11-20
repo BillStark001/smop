@@ -1,5 +1,7 @@
 from smop.node.base import *
 
+from typing import Optional, List
+
 ###########################
 #
 #  STATEMENTS
@@ -33,14 +35,23 @@ class stmt_list(node, list):
 #                               str(self.func_expr),
 #                               str(self.args))
 
-class let(stmt, recordtype("let",
-                           "ret args lineno lexpos nargout",
-                           default=None)):
-    """Assignment statement, except [x,y]=foo(x,y,z),
-    which is handled by call_stmt."""
+# recordtype("let", "ret args lineno lexpos nargout", default=None)
+class let(stmt):
+    """
+    Assignment statement, except [x,y] = foo(x,y,z),
+    which is handled by call_stmt.
+    """
+
+    def __init__(self, ret: node, args: node, 
+                 lineno: int = -1, lexpos: int = -1, nargout: int = -1):
+        self.ret = ret
+        self.args = args
+        self.lineno = lineno
+        self.lexpos = lexpos
+        self.nargout = nargout
 
     def __str__(self):
-        return "%s=%s" % (str(self.ret), str(self.args))
+        return "%s = %s" % (str(self.ret), str(self.args))
 
 
 class for_stmt(stmt, recordtype("for_stmt", "ident expr stmt_list")):
@@ -107,6 +118,7 @@ class null_stmt(stmt, namedtuple("null_stmt", "")):
 
 
 class expr_stmt(stmt, node, recordtype("expr_stmt", "expr")):
+    expr: node
     def __str__(self):
         return str(self.expr)
 

@@ -35,6 +35,9 @@ class node(object):
     
     __is_python_repr = False
     
+    def __hash__(self):
+        return id(self)
+    
     def become(self, other):
         
         class Wrapper(self.__class__):
@@ -54,9 +57,9 @@ class node(object):
                 other = object.__getattribute__(self, "other")
                 return iter(other)
             
-            #def __hash__(self):
-            #    other = object.__getattribute__(self,"other")
-            #    return id(other)
+            def __hash__(self):
+                other = object.__getattribute__(self, "other")
+                return id(other)
 
             def __repr__(self):
                 other = object.__getattribute__(self, "other")
@@ -90,9 +93,10 @@ class node(object):
 
 
 def postorder(u: node) -> Generator[node, None, None]:
-    if isinstance(u, node):
+    if isinstance(u, list):
         for v in u:
             for t in postorder(v):
                 yield t
+    if isinstance(u, node):
         yield u  # returns only traversible objects
 

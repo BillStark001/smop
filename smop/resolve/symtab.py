@@ -21,12 +21,12 @@ class SymType(object):
 class SymRecord(object):
     
     def __init__(self, name: str):
-        self.__rec: List[node.ident]  = []
+        self.__rec: Set[node.ident]  = set()
         self.name = name
         self.__feat: Set[str] = set()
         
     def add_ident(self, i: node.ident):
-        self.__rec.append(i)
+        self.__rec.add(i)
         
     def add_feature(self, feature: str):
         self.__feat.add(feature)
@@ -43,15 +43,20 @@ class SymRecord(object):
         ret.__feat = feat
         return ret
         
-SymRecord.FEATURE_IS_NUMBER = '[is_number]'
-SymRecord.FEATURE_IS_STRING = '[is_string]'
-SymRecord.FEATURE_IS_LOGICAL = '[is_logical]'
+FEATURE_IS_NUMBER = '[is_number]'
+FEATURE_IS_STRING = '[is_string]'
+FEATURE_IS_LOGICAL = '[is_logical]'
+FEATURE_IS_FUNC = '[is_func]'
 
 class SymTab(object):
     
     def __init__(self, outer: Optional['SymTab'] = None):
         self.__tab: SymtabDict = {}
         self.__outer = outer
+        self.__inners: List['SymTab'] = []
+        
+        if self.__outer is not None:
+            self.__outer.__inners.append(self)
     
     @property
     def outer(self) -> Optional['SymTab']:

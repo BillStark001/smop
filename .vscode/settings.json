@@ -3,10 +3,14 @@
     "classdef",
     "lexpos",
     "modif",
+    "nargin",
+    "nargout",
     "postorder",
+    "recordtype",
     "restr",
     "restrs",
     "SMOP",
-    "Symtab"
+    "Symtab",
+    "varargin"
   ]
 }

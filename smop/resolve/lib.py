@@ -17,24 +17,61 @@ def _resolve(self: node.ident, symtab: SymTab):
         # defs == set() means name used, but not defined
         pass
     '''
-    
 
+
+'''
 @extend(node.ident)
 def _lhs_resolve(self: node.ident, symtab: SymTab):
     symtab[self.name] = [self]
-
+'''
 
 
 @extend(node.expr)
-def _resolve(self: node.node, symtab: SymTab):
-    
+def _resolve(self: node.expr, symtab: SymTab):
+
     if self.op == '.':
-        pass
-    
-    for expr in self.args:
-        expr._resolve(symtab)
+        assert len(self.args) == 2, 'resolve field expr len %d' % len(self.args)
+        assert isinstance(self.args[0], node.ident)
+        sid = self.args[0]
+        sfl = self.args[1]
+
+        sid._resolve(symtab)
+        sfl._resolve(symtab)
+
+        rec = symtab.find_or_create(sid.name)
+        rec.add_feature(sfl)
+        return
+    elif self.op == '[]':
+        raise Exception('NIE')
+
+    for n in self.args:
+        n._resolve(symtab)
 
 
+
+@extend(node.let)
+def _resolve(self: node.node, symtab: SymTab):
+    self.ret._resolve(symtab)
+    self.args._resolve(symtab)
+
+
+"""
+
+@extend(node.let)
+def _lhs_resolve(self: node.node, symtab: SymTab):
+    self.args._resolve(symtab)
+    self.ret._lhs_resolve(symtab)
+
+
+@extend(node.setfield)  # a subclass of funcall
+def _resolve(self: node.node, symtab: Symtab):
+    self.func_expr._resolve(symtab)
+    self.args._resolve(symtab)
+    self.args[0]._lhs_resolve(symtab)
+"""
+
+
+'''
 @extend(node.expr)
 def _lhs_resolve(self: node.expr, symtab: SymTab):
     if self.op == ".":  # see setfield
@@ -57,7 +94,7 @@ def _lhs_resolve(self: node.node, symtab: SymTab):
     self.args._resolve(symtab)      # B
     self.func_expr._lhs_resolve(symtab)
 
-
+'''
 
 
 @extend(node.expr_stmt)
@@ -67,22 +104,56 @@ def _resolve(self: node.node, symtab: SymTab):
 
 @extend(node.for_stmt)
 def _resolve(self: node.node, symtab: SymTab):
-    symtab_copy = copy_symtab_dict(symtab)
-    self.ident._lhs_resolve(symtab)
+    symtab_copy = SymTab(outer=symtab)
+    self.ident._resolve(symtab_copy)
     self.expr._resolve(symtab)
-    self.stmt_list._resolve(symtab)
-    self.stmt_list._resolve(symtab)  # 2nd time, intentionally
+    self.stmt_list._resolve(symtab_copy)
+    self.stmt_list._resolve(symtab_copy)  # 2nd time, intentionally
     # Handle the case where FOR loop is not executed
-    for k, v in symtab_copy.items():
-        symtab.setdefault(k, []).append(v)
+
+    # What the hell is this?
+    # for k, v in symtab_copy.items():
+    #     symtab.setdefault(k, []).append(v)
+
+
+@extend(node.if_stmt)
+def _resolve(self: node.node, symtab: SymTab):
+    # symtab_copy = copy_symtab_dict(symtab)
+    self.cond_expr._resolve(symtab)
+    self.then_stmt._resolve(symtab)
+    if self.else_stmt:
+        self.else_stmt._resolve(symtab)
+    # for k, v in symtab_copy.items():
+    #     symtab.setdefault(k, []).append(v)
 
 
 @extend(node.func_stmt)
-def _resolve(self: node.node, symtab: SymTab):
+def _resolve(self: node.func_stmt, symtab: SymTab):
+    symtab_inner = SymTab(outer=symtab)
     if self.ident:
         self.ident._resolve(symtab)
-    self.args._lhs_resolve(symtab)
-    self.ret._resolve(symtab)
+        rec = symtab.find_or_create(self.ident.name)
+        rec.add_feature(FEATURE_IS_FUNC)
+
+    # build args
+    self.args._resolve(symtab_inner)
+    if self.use_nargin:
+        symtab_inner.create('nargin').add_ident(
+            node.ident(name='nargin', lineno=-1, lexpos=-1, column=-1)
+        )
+    if self.use_varargin:
+        symtab_inner.create('varargin').add_ident(
+            node.ident(name='varargin', lineno=-1, lexpos=-1, column=-1)
+        )
+
+    self.stmt_list._resolve(symtab_inner)
+    self.ret._resolve(symtab_inner)
+
+
+@extend(node.try_catch)
+def _resolve(self: node.node, symtab: SymTab):
+    self.try_stmt._resolve(symtab)
+    self.catch_stmt._resolve(symtab)  # ???
 
 
 @extend(node.global_list)
@@ -106,52 +177,6 @@ def _resolve(self: node.node, symtab: SymTab):
     self.global_list._lhs_resolve(symtab)
 
 
-
-@extend(node.if_stmt)
-def _resolve(self: node.node, symtab: SymTab):
-    symtab_copy = copy_symtab_dict(symtab)
-    self.cond_expr._resolve(symtab)
-    self.then_stmt._resolve(symtab)
-    if self.else_stmt:
-        self.else_stmt._resolve(symtab_copy)
-    for k, v in symtab_copy.items():
-        symtab.setdefault(k, []).append(v)
-
-
-@extend(node.let)
-def _lhs_resolve(self: node.node, symtab: SymTab):
-    self.args._resolve(symtab)
-    self.ret._lhs_resolve(symtab)
-
-
-@extend(node.let)
-def _resolve(self: node.node, symtab: SymTab):
-    self.args._resolve(symtab)
-    self.ret._lhs_resolve(symtab)
-
-
-@extend(node.null_stmt)
-@extend(node.continue_stmt)
-@extend(node.break_stmt)
-def _resolve(self: node.node, symtab: SymTab):
-    pass
-
-"""
-@extend(node.setfield)  # a subclass of funcall
-def _resolve(self: node.node, symtab: Symtab):
-    self.func_expr._resolve(symtab)
-    self.args._resolve(symtab)
-    self.args[0]._lhs_resolve(symtab)
-"""
-
-@extend(node.try_catch)
-def _resolve(self: node.node, symtab: SymTab):
-    self.try_stmt._resolve(symtab)
-    self.catch_stmt._resolve(symtab)  # ???
-
-
-
-
 @extend(node.arrayref)
 @extend(node.cellarrayref)
 @extend(node.funcall)
@@ -163,7 +188,6 @@ def _resolve(self: node.node, symtab: SymTab):
     self.args._resolve(symtab)
     #if self.ret:
     #    self.ret._lhs_resolve(symtab)
-
 
 
 # @extend(node.call_stmt)

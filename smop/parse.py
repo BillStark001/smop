@@ -313,7 +313,7 @@ def p_expr2(p):
              | expr ANDEQ expr
     """
     if p[2] == "=":
-        if p[1].__class__ is node.let:
+        if isinstance(p[1], node.let):
             raise_exception(SyntaxError,
                             "Not implemented assignment as expression",
                             new_lexer)
@@ -459,6 +459,7 @@ def p_expr_stmt(p):
     expr_stmt : expr_list SEMI
     """
     assert isinstance(p[1], node.expr_list)
+    
     p[0] = node.expr_stmt(expr=p[1])
 
 
@@ -489,7 +490,6 @@ def p_field_expr(p):
     """
     expr : expr FIELD
     """
-    print(type(p[2]))
     p[0] = node.expr(
         op=".",
         args=node.expr_list([
@@ -507,7 +507,7 @@ def p_foo_stmt(p):
     args1 = expr1.args
     args2 = expr2.args
     p[0] = node.let(ret=ident,
-                    args=node.expr("or", node.expr_list([args1, args2])))
+                    args=node.expr(op="or", args=node.expr_list([args1, args2])))
 
 
 @exceptions

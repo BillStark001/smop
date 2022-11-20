@@ -19,6 +19,8 @@ It is used in if_stmt, for_stmt, and while_stmt.
 """
 '''
 The previous is from Victor. 
+The new resolver is responsible for solving name conflict
+and python-izing special statements (i. e. classdef).
 '''
 
 from typing import Dict, Any, List, Optional, Set

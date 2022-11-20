@@ -19,9 +19,6 @@ class func_stmt(stmt, recordtype("func_stmt",
 class lambda_expr(func_stmt):
     pass
 
-class function(stmt, recordtype("function", "head body")):
-    pass
-
 class func_superclass_handle(expr):
     def __init__(self, name, cname):
         super().__init__(op="@", args=expr_list([name, cname]))

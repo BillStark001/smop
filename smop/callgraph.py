@@ -20,8 +20,8 @@ def callgraph(G, stmt_list):
         except:
             pass
     for func in func_list:
-        assert isinstance(func, node.function)
-        func_name = func.head.ident.name
+        assert isinstance(func, node.func_stmt)
+        func_name = func.ident.name
         #resolve.resolve(func)
         for s in node.postorder(func):
             if (s.__class__ is node.funcall and

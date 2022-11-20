@@ -4,7 +4,7 @@ from smop.node.stmt import *
 
 # class definition related
 
-class classdef_stmt(stmt, recordtype("classdef_stmt", "name attrs super props methods events ctor")):
+class classdef_stmt(stmt, recordtype("classdef_stmt", "name attrs super sub")):
     pass
 
 class class_props(stmt, recordtype("class_props", "stmt_list restrs")):

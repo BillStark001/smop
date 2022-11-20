@@ -1043,8 +1043,7 @@ def p_classdef_head_args(p):
         p_args = None
     else:
         assert 0, "classdef head %d" % len(p)
-    p[0] = node.classdef_stmt(attrs=p_args, name=None, super=None,
-                              props=None, methods=None, events=None, ctor=None)
+    p[0] = node.classdef_stmt(attrs=p_args, name=None, super=None, sub=[])
 
 
 @exceptions
@@ -1058,6 +1057,7 @@ def p_classdef_head(p):
     p[0] = p[1]
     if len(p) == 4:
         p[0].name = p[2]
+        p[0].super = node.expr_list()
     elif len(p) == 6:
         p[0].name = p[2]
         p[0].super = p[4]
@@ -1075,19 +1075,7 @@ def p_classdef_stmt(p):
     p[0] = p[1]
     assert isinstance(
         p[2], node.stmt_list), "classdef_stmt list type %s" % type(p[2])
-    # TODO reform
-    stmt_uncat = []
-    for stmt in p[2]:
-        if isinstance(stmt, node.class_props):
-            p[0].props = stmt.stmt_list
-        elif isinstance(stmt, node.class_methods):
-            p[0].methods = stmt.stmt_list
-        elif isinstance(stmt, node.class_events):
-            p[0].events = stmt.stmt_list
-        else:
-            stmt_uncat.append(stmt)
-    # if stmt_uncat:
-    #     assert 0, str(stmt_uncat)
+    p[0].sub = p[2]
 
 # main parser
 

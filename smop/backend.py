@@ -9,7 +9,7 @@ func decl:  nargout=1 must be declared if function may return
             more than one return value.  Otherwise optional.
 return value:  return (x,y,z)[:nargout] or return x
 """
-
+import os
 from smop.common import extend
 from smop.options import options
 from smop import node
@@ -276,6 +276,12 @@ def _backend(self: node.node, level: int = 0):
     return s
 
 
+@extend(node.func_args)
+def _backend(self: node.node, level: int = 0):
+    # TODO
+    return "# TODO argument restriction not implemented!"
+
+
 @extend(node.funcall)
 def _backend(self: node.node, level: int = 0):
     #import pdb; pdb.set_trace()
@@ -328,8 +334,9 @@ def _backend(self: node.node, level: int = 0):
 @extend(node.let)
 def _backend(self: node.node, level: int = 0):
     if not options.no_numbers:
-        t = "\n# %s:%s" % (options.filename,
-                           self.lineno)
+        t = " # %s:%s" % (#indent * level, 
+                            os.path.basename(options.filename),
+                            self.lineno)
         # level*indent)
     else:
         t = ''
@@ -457,6 +464,19 @@ def _backend(self: node.node, level: int = 0):
     return fmt % (self.cond_expr._backend(),
                   self.stmt_list._backend(level+1))
 
+@extend(node.class_props)
+def _backend(self: node.class_props, level: int = 0):
+    ans = '# restrictions: ' + self.restrs._backend(0) + '\n' \
+        if self.restrs else ''
+    ans += self.stmt_list._backend(level)
+    return ans
+
+@extend(node.class_methods)
+def _backend(self: node.class_methods, level: int = 0):
+    ans = '# restrictions: ' + self.restrs._backend(0) + '\n' \
+        if self.restrs else ''
+    ans += self.stmt_list._backend(level)
+    return ans
 
 @extend(node.classdef_stmt)
 def _backend(self: node.node, level: int = 0):
@@ -466,15 +486,7 @@ def _backend(self: node.node, level: int = 0):
     class_def += ':'
 
     ans = class_def + '\n'
-    if self.props:
-        ans += self.props._backend(level + 1)
-    if self.methods:
-        ans += self.methods._backend(level + 1)
-
+    ans += self.sub._backend(level + 1)
+    
     return ans
 
-
-@extend(node.func_args)
-def _backend(self: node.node, level: int = 0):
-    # TODO
-    return "# TODO argument restriction not implemented!"

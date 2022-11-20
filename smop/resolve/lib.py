@@ -127,6 +127,13 @@ def _resolve(self: node.node, symtab: SymTab):
     #     symtab.setdefault(k, []).append(v)
 
 
+@extend(node.try_catch)
+def _resolve(self: node.node, symtab: SymTab):
+    self.try_stmt._resolve(symtab)
+    self.catch_stmt._resolve(symtab)  # ???
+
+# functiom
+
 @extend(node.func_stmt)
 def _resolve(self: node.func_stmt, symtab: SymTab):
     symtab_inner = SymTab(outer=symtab)
@@ -150,11 +157,38 @@ def _resolve(self: node.func_stmt, symtab: SymTab):
     self.ret._resolve(symtab_inner)
 
 
-@extend(node.try_catch)
+@extend(node.func_args)
 def _resolve(self: node.node, symtab: SymTab):
-    self.try_stmt._resolve(symtab)
-    self.catch_stmt._resolve(symtab)  # ???
+    # TODO, FIXME
+    print("TODO func_args _resolve")
 
+
+# class def
+
+
+@extend(node.classdef_stmt)
+def _resolve(self: node.node, symtab: SymTab):
+    self.name._resolve(symtab)
+    if self.attrs:
+        self.attrs._resolve(symtab)
+    self.super._resolve(symtab)
+    
+    symtab_inner = SymTab(outer=symtab)
+    self.sub._resolve(symtab_inner)
+
+@extend(node.class_props)
+def _resolve(self: node.class_props, symtab: SymTab):
+    pass # TODO expr_stmt
+
+@extend(node.class_methods)
+def _resolve(self: node.class_methods, symtab: SymTab):
+    pass # TODO func_stmt
+
+@extend(node.class_events)
+def _resolve(self: node.class_events, symtab: SymTab):
+    pass # TODO since we haven't met any class events, postpone it
+
+# TODO
 
 @extend(node.global_list)
 @extend(node.concat_list)
@@ -225,30 +259,3 @@ def _resolve(self: node.node, symtab: SymTab):
         symtab.setdefault(k, []).append(v)
 
 
-@extend(node.function)
-def _resolve(self: node.node, symtab: SymTab):
-    self.head._resolve(symtab)
-    self.body._resolve(symtab)
-    self.head.ret._resolve(symtab)
-
-
-@extend(node.classdef_stmt)
-def _resolve(self: node.node, symtab: SymTab):
-    if self.name:
-        self.name._resolve(symtab)
-    if self.attrs:
-        self.attrs._resolve(symtab)
-    if self.super:
-        self.super._resolve(symtab)
-    if self.props:
-        self.props._resolve(symtab)
-    if self.methods:
-        self.methods._resolve(symtab)
-    if self.events:
-        self.events._resolve(symtab)
-
-
-@extend(node.func_args)
-def _resolve(self: node.node, symtab: SymTab):
-    # TODO, FIXME
-    print("TODO func_args _resolve")

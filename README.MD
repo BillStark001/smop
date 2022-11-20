@@ -160,71 +160,52 @@ Now some random notes.
 
 The table below tries to summarize various features.
 
-+------------------------+----------------------------------+
+
 | Implemented features   |                                  |
-+========================+==================================+
+|------------------------|----------------------------------|
 | Lexical and syntactical| Mostly complete, including       |
 | analysis               | some weird Matlab features       |
-+------------------------+----------------------------------+
 | Name resolution        | For each occurrence of a         | 
 |                        | variable, find a set of its      |
 |                        | possible definitions             |
-+------------------------+----------------------------------+
 | Inlining of small      |                                  |
 | functions              |                                  |
-+------------------------+----------------------------------+
 | Array subscripts       | Also, end subscript implemented  |
 | translated from 1-based|                                  |
 | (Matlab and Fortran    |                                  |
 | style) to 0-based (C   |                                  |
 | and Python style)      |                                  |
-+------------------------+----------------------------------+
 | from:step:to           |                                  |
 | translated to          |                                  |
 | from:to:step           |                                  |
-+------------------------+----------------------------------+
 | Upper bound is n+1     |                                  |
-+------------------------+----------------------------------+
 
-+------------------------+----------------------------------+
+
+
 | Unimplemented features |                                  |
-|                        |                                  |
-+========================+==================================+
-| Structs                |                                  | 
-|                        | To be implemented as soon as  cc |
-|                        | possible.                        |
-+------------------------+----------------------------------+
+|------------------------|----------------------------------|
+| Structs | To be implemented as soon as possible.|
 | Arrays silently become | In some cases it may break the   |
 | C=style (rows first).  | code. Not detected.              |
-+------------------------+----------------------------------+
 | Function handles and   | Handles break the heuristic that |
 | lambda expressions     | tells between function calls and |
 |                        | array references.                |
-+------------------------+----------------------------------+
 | Graphics,              | Never                            |
-+------------------------+----------------------------------+
 | Auto-expanding arrays  | Unlike other languages, matlab   |
 |                        | allows out-of-bounds assignment. |
 |                        | As MathWorks tries to phase out  |
 |                        | this feature, there is a lot of  |
 |                        | legacy code depending on it.     |
-+------------------------+----------------------------------+
 | Sparse matrices        | Have good chances of being       |
 |                        | implemented, especially taking   |
 |                        | into account that scipy have     |
 |                        | several implementations to choose|
 |                        | from.                            |
-+------------------------+----------------------------------+
 | Full support for       | For example, x(x>0.5) = 1        |
 | boolean indexing.      | works, but y=x>0.5; x(y)=1       |
 | Currently, some        | does not work.                   |
 | expressions don't work |                                  |
 |                        |                                  |
-+------------------------+----------------------------------+
-| Command syntax         | Too complex to support           |
-+------------------------+----------------------------------+
-| Type, rank and shape   |                                  |
-| inference              |                                  |           
-+------------------------+----------------------------------+
-| Strings                |                                  |
-+------------------------+----------------------------------+
+| Command syntax | Too complex to support           |
+| Type, rank and shape inference | |            
+| Strings | |

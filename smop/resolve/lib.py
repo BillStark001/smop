@@ -51,6 +51,12 @@ def _resolve(self: node.expr, symtab: SymTab):
         n._resolve(symtab)
 
 
+@extend(node.stmt_list)
+def _resolve(self: node.node, symtab: SymTab):
+    for stmt in self:
+        stmt._resolve(symtab)
+
+
 @extend(node.let)
 def _resolve(self: node.node, symtab: SymTab):
     self.ret._resolve(symtab)
@@ -151,7 +157,9 @@ def _resolve(self: node.node, symtab: SymTab):
 
 @extend(node.func_stmt)
 def _resolve(self: node.func_stmt, symtab: SymTab):
+    
     symtab_inner = SymTab(outer=symtab)
+    self.decorator_list = self.decorator_list or []
     if self.ident:
         self.ident._resolve(symtab)
         rec = symtab.find_or_create(self.ident.name)
@@ -169,18 +177,90 @@ def _resolve(self: node.func_stmt, symtab: SymTab):
         )
 
     if self.stmt_list:
-        self.stmt_list._resolve(symtab_inner)
+        for stmt in self.stmt_list:
+            if isinstance(stmt, node.func_args):
+                stmt._resolve(symtab_inner, self)
+            else:
+                stmt._resolve(symtab_inner)
     self.ret._resolve(symtab_inner)
 
 
 @extend(node.func_args)
-def _resolve(self: node.node, symtab: SymTab):
-    # TODO, FIXME
-    print("TODO func_args _resolve")
+def _resolve(self: node.func_args, symtab: SymTab, func: node.func_stmt):
+    
+    assert func is not None, 'func_args._resolve: A function statement is necessary for the resolution.'
+    self.extstmt = self.extstmt or node.stmt_list()
+    
+    # parse argument attributes
+    repeat_flag = False
+    output_flag = False
+    input_flag = False
+    if self.modif:
+        for mdf in self.modif:
+            assert isinstance(mdf, node.ident)
+            if mdf.name == 'Repeating':
+                repeat_flag = True
+            elif mdf.name == 'Output':
+                output_flag = True
+            elif mdf.name == 'Input':
+                input_flag = True
+    assert not (input_flag and output_flag), 'Input and Output keywords cannot appear at the same time.'
+    
+    # generate native argument table
+    args: Dict[str, node.ident] = {}
+    if output_flag:
+        if isinstance(func.ret, node.ident):
+            args[func.ret.name] = func.ret
+        elif isinstance(func.ret, node.expr_list):
+            for arg in func.ret:
+                assert isinstance(arg, node.ident)
+                args[arg.name] = arg
+    else:
+        for arg in func.args:
+            assert isinstance(arg, node.ident)
+            args[arg.name] = arg
+            
+    
+    if repeat_flag:
+        # TODO
+        self.extstmt.append(node.comment_stmt(f'Repeating Arguments'))
+            
+    # get target
+    tgt_lst = self.restrs if not isinstance(self.restrs, node.func_arg_restr) else [self.restrs]
+    
+    for arg in tgt_lst:
+        if isinstance(arg, node.ident):
+            continue
+        assert isinstance(arg, node.func_arg_restr), str(type(arg)) + ' ' + str(type(self.restrs))
+        assert arg.name.name in args, 'unexpected arg ident literal: %s' % arg.name.name
+        ident = args[arg.name.name]
+        if arg.cls:
+            ident.dtype = arg.cls
+        if arg.defVal:
+            ident.init = arg.defVal
+        if arg.val:
+            self.extstmt.append(node.comment_stmt(f'# {arg.name}: {arg.val}'))
+        if arg.dim:
+            self.extstmt.append(node.comment_stmt(f'# {arg.name}: ({arg.dim})'))
+        
+    if output_flag:
+        # TODO deal with returns' type, default value, validator, dimension
+        for _, ident in args.items():
+            if ident.dtype or ident.init:
+                ret = node.let(
+                    ret=node.ident(ident.name), 
+                    args=ident.init if ident.init else node.ident('None'), 
+                    dtype=ident.dtype)
+                ident.dtype = None
+                ident.init = None
+                self.extstmt.append(ret)
+        pass
+    
+    self.extstmt._resolve(symtab)
 
 
 # class def
-
+# TODO
 
 @extend(node.classdef_stmt)
 def _resolve(self: node.node, symtab: SymTab):
@@ -195,12 +275,20 @@ def _resolve(self: node.node, symtab: SymTab):
 
 @extend(node.class_props)
 def _resolve(self: node.class_props, symtab: SymTab):
-    pass  # TODO expr_stmt
+    for stmt in self.stmt_list:
+        if not isinstance(stmt, node.expr_stmt):
+            continue
+        assert isinstance(stmt.expr, node.expr_list)
+        for expr in stmt.expr:
+            if isinstance(expr, node.ident):
+                expr.init = node.ident('None')
+    self.stmt_list._resolve(symtab)
 
 
 @extend(node.class_methods)
 def _resolve(self: node.class_methods, symtab: SymTab):
-    pass  # TODO func_stmt
+    # TODO func_stmt
+    self.stmt_list._resolve(symtab)
 
 
 @extend(node.class_events)
@@ -258,9 +346,3 @@ def _resolve(self: node.node, symtab: SymTab):
 def _resolve(self: node.node, symtab: SymTab):
     self.ret._resolve(symtab)
     #symtab.clear()
-
-
-@extend(node.stmt_list)
-def _resolve(self: node.node, symtab: SymTab):
-    for stmt in self:
-        stmt._resolve(symtab)

@@ -416,7 +416,7 @@ def p_expr_ident(p):
         lineno=p.lineno(1),
         column=p.lexpos(1) - p.lexer.lexdata.rfind("\n", 0, p.lexpos(1)),
         lexpos=p.lexpos(1),
-        defs=None,
+        dtype=None,
         props=None,
         init=None)
 
@@ -914,7 +914,7 @@ def p_fa_1(p):
     fa_1 : ident LPAREN expr_list RPAREN
          | ident 
     """
-    p[0] = node.func_arg_restr(dim=None, cls=None, val=None, defVal=None)
+    p[0] = node.func_arg_restr(name=p[1], dim=None, cls=None, val=None, defVal=None)
     if len(p) == 5:
         p[0].dim = p[3]
 
@@ -983,9 +983,9 @@ def p_func_args(p):
               | FUNCTION_ARGUMENTS LPAREN expr_list RPAREN SEMI func_arg_list END_FUNCTION_ARGUMENTS
     """
     if len(p) == 5:
-        p[0] = node.func_args(modif=node.expr_list(), restrs=p[3])
-    elif len(p) == 7:
-        p[0] = node.func_args(modif=p[3], restrs=p[5])
+        p[0] = node.func_args(modif=node.expr_list(), restrs=p[3], extstmt=None)
+    elif len(p) == 8:
+        p[0] = node.func_args(modif=p[3], restrs=p[6], extstmt=None)
     else:
         assert 0, "unexpected length: %d" % len(p)
 

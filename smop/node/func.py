@@ -1,6 +1,6 @@
 from smop.node.base import *
 from smop.node.stmt import *
-from smop.node.types import expr, expr_list
+from smop.node.types import expr, expr_list, ident
 
 
 class func_stmt(stmt, recordtype("func_stmt",
@@ -10,6 +10,7 @@ class func_stmt(stmt, recordtype("func_stmt",
                                 args
                                 modif
                                 stmt_list
+                                decorator_list
                                 use_nargin
                                 use_varargin
                                 """,
@@ -26,8 +27,11 @@ class func_superclass_handle(expr):
 
 # function argument restriction related
 
-class func_arg_restr(stmt, recordtype("func_arg_restr", "dim cls val defVal")):
+class func_arg_restr(stmt, recordtype("func_arg_restr", "name dim cls val defVal")):
+    name: ident
+    cls: ident
+    
     pass
 
-class func_args(stmt, recordtype("func_args", "modif restrs")):
+class func_args(stmt, recordtype("func_args", "modif restrs extstmt")):
     pass

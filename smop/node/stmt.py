@@ -42,23 +42,22 @@ class let(stmt):
     which is handled by call_stmt.
     """
 
-    def __init__(self, ret: node, args: node, 
+    def __init__(self, ret: node, args: node, dtype: Optional[node] = None, 
                  lineno: int = -1, lexpos: int = -1, nargout: int = -1):
         self.ret = ret
         self.args = args
+        self.dtype = dtype
         self.lineno = lineno
         self.lexpos = lexpos
         self.nargout = nargout
 
     def __str__(self):
+        if self.dtype:
+            return f'{self.ret}: {self.dtype} = {self.args}'
         return "%s = %s" % (str(self.ret), str(self.args))
 
 
 class for_stmt(stmt, recordtype("for_stmt", "ident expr stmt_list")):
-    pass
-
-
-class DO_STMT(stmt, recordtype("DO_STMT", "ident start stop stmt_list")):
     pass
 
 # We generate where_stmt to implement A(B==C) = D

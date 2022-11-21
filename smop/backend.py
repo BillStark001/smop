@@ -9,11 +9,15 @@ func decl:  nargout=1 must be declared if function may return
             more than one return value.  Otherwise optional.
 return value:  return (x,y,z)[:nargout] or return x
 """
+
+from typing import List
+
 import os
+import logging
+
 from smop.common import extend
 from smop.options import options
 from smop import node
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +72,7 @@ reserved = set(
 #exp   fabs floor log log10
 #pi    sin  sqrt  tan
 
-ret_expr_stack = []  # 0: expr #1: used time
+ret_expr_stack: List[node.node] = []  # 0: expr #1: used time
 def pop_ret_expr(): return ret_expr_stack.pop()[
     0] if len(ret_expr_stack) > 0 else None
 
@@ -142,7 +146,7 @@ def _backend(self: node.node, level: int = 0):
 @extend(node.concat_list)
 def _backend(self: node.node, level: int = 0):
     #import pdb; pdb.set_trace()
-    return ",".join(["[%s]" % t._backend() for t in self])
+    return ", ".join(["[%s]" % t._backend() for t in self])
 
 
 @extend(node.continue_stmt)
@@ -208,7 +212,7 @@ def _backend(self: node.node, level: int = 0):
                                        self.args[1]._backend())
 
 #     if self.op == "matrix":
-#         return "[%s]" % ",".join([t._backend() for t in self.args])
+#         return "[%s]" % ", ".join([t._backend() for t in self.args])
     if self.op == "parens":
         return "(%s)" % self.args[0]._backend()
 #    if self.op == "[]":
@@ -225,12 +229,12 @@ def _backend(self: node.node, level: int = 0):
     #import pdb;pdb.set_trace()
     ret = "%s=" % self.ret._backend() if self.ret else ""
     return ret+"%s(%s)" % (self.op,
-                           ",".join([t._backend() for t in self.args]))
+                           ", ".join([t._backend() for t in self.args]))
 
 
 @extend(node.expr_list)
 def _backend(self: node.node, level: int = 0):
-    return ",".join([t._backend() for t in self])
+    return ", ".join([t._backend() for t in self])
 
 
 @extend(node.expr_stmt)
@@ -249,7 +253,7 @@ def _backend(self: node.node, level: int = 0):
 @extend(node.func_stmt)
 def _backend(self: node.node, level: int = 0):
 
-    func_template = ['@function', 'def {}({}):']
+    func_template = 'def {}({}):'
     # argin = ['varargin = %s.varargin', 'nargin = %s.nargin']
 
     if self.use_nargin:
@@ -260,26 +264,28 @@ def _backend(self: node.node, level: int = 0):
     idb = self.ident._backend()
     push_ret_expr(self.ret)
 
-    ss = [func_template[0],
-          (indent * level) + func_template[1].format(idb, self.args._backend())]
-    # if self.use_nargin:
-    #     ss += [indent * (level + 1) + (x % idb) for x in argin]
-    ss.append(self.stmt_list._backend(level=level+1))
+    ret = []
+    if self.decorator_list:
+        for dec in self.decorator_list:
+            ret.append(dec._backend())
+    ret.append(func_template.format(idb, self.args._backend()))
+
+    ss = ('\n' + (indent * level)).join(ret)
+
+    ss += (self.stmt_list._backend(level=level+1))
 
     if not last_ret_expr_used():
         if last_ret_expr():
-            ss.append((indent * (level + 1)) +
-                      node.return_stmt()._backend(level=level+1))
+            ss += (indent * (level + 1)) + \
+                      node.return_stmt()._backend(level=level+1)
     pop_ret_expr()
-    s = '\n'.join(ss)
-
-    return s
+    
+    return ss
 
 
 @extend(node.func_args)
 def _backend(self: node.node, level: int = 0):
-    # TODO
-    return "# TODO argument restriction not implemented!"
+    return self.extstmt._backend(level) if self.extstmt else ''
 
 
 @extend(node.funcall)
@@ -299,17 +305,19 @@ def _backend(self: node.node, level: int = 0):
 
 @extend(node.global_list)
 def _backend(self: node.node, level: int = 0):
-    return ",".join([t._backend() for t in self])
+    return ", ".join([t._backend() for t in self])
 
 
 @extend(node.ident)
-def _backend(self: node.node, level: int = 0):
+def _backend(self: node.ident, level: int = 0):
+    ret = self.name
     if self.name in reserved:
-        self.name += "_"
+        ret += "_"
+    if self.dtype:
+        ret += ': ' + self.dtype._backend()
     if self.init:
-        return "%s=%s" % (self.name,
-                          self.init._backend())
-    return self.name
+        ret += ' = ' + self.init._backend()
+    return ret
 
 
 @extend(node.if_stmt)
@@ -357,10 +365,10 @@ def _backend(self: node.node, level: int = 0):
                                       self.args._backend())
     elif (self.ret.__class__ is node.ident and
           self.args.__class__ is node.ident):
-        s += "%s=copy(%s)" % (self.ret._backend(),
+        s += "%s = copy(%s)" % (self.ret._backend(),
                               self.args._backend())
     else:
-        s += "%s=%s" % (self.ret._backend(),
+        s += "%s = %s" % (self.ret._backend(),
                         self.args._backend())
     return s+t
 

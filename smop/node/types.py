@@ -27,10 +27,11 @@ class number(atom, recordtype("number", "value lineno lexpos", default=None)):
     def __str__(self):
         return str(self.value)
 
-class ident(atom, recordtype("ident", "name lineno column lexpos defs props init",
+class ident(atom, recordtype("ident", "name lineno column lexpos dtype props init",
                              default=None)):
     name: str
     column: int
+    dtype: node
     
     def __str__(self):
         return self.name

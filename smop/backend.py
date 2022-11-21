@@ -276,7 +276,7 @@ def _backend(self: node.node, level: int = 0):
 
     if not last_ret_expr_used():
         if last_ret_expr():
-            ss += (indent * (level + 1)) + \
+            ss += '\n' + (indent * (level + 1)) + \
                       node.return_stmt()._backend(level=level+1)
     pop_ret_expr()
     

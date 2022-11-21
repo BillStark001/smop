@@ -262,12 +262,32 @@ def _resolve(self: node.func_args, symtab: SymTab, func: node.func_stmt):
 # class def
 # TODO
 
+@extend(node.func_stmt)
+def _pre_resolve_classmethod(self: node.func_stmt, cls: node.classdef_stmt, symtab: SymTab):
+    if self.ident.name == cls.name.name:
+        self.ident.name = '__init__'
+        ret = self.ret
+        if isinstance(ret, node.expr_list):
+            assert len(ret) == 1
+            ret = ret[0]
+        assert isinstance(ret, node.ident)
+        
+        self.ret = node.expr_list()
+        self.args.insert(0, ret)
+
 @extend(node.classdef_stmt)
 def _resolve(self: node.node, symtab: SymTab):
     self.name._resolve(symtab)
     if self.attrs:
         self.attrs._resolve(symtab)
     self.super._resolve(symtab)
+
+    # rename functions
+    for s in self.sub:
+        if isinstance(s, node.class_methods):
+            for f in s.stmt_list:
+                if isinstance(f, node.func_stmt):
+                    f._pre_resolve_classmethod(self, symtab)
 
     symtab_inner = SymTab(outer=symtab)
     self.sub._resolve(symtab_inner)

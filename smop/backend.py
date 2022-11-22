@@ -460,10 +460,16 @@ def _backend(self: node.node, level: int = 0):
 
 @extend(node.try_catch)
 def _backend(self: node.node, level: int = 0):
-    fmt = "try:%s\n%sfinally:%s"
-    return fmt % (self.try_stmt._backend(level+1),
-                  indent*level,
-                  self.finally_stmt._backend(level+1))
+    ans = f'try:{self.try_stmt._backend(level + 1)}'
+    return_line = '\n' + (indent * level)
+    flag = False
+    if self.catch_stmt:
+        flag = True
+        ex = (' Exception as ' + self.catch_cond._backend()) if self.catch_cond else ''
+        ans += f'{return_line}except{ex}:{self.catch_stmt._backend(level + 1)}'
+    if self.finally_stmt or not flag:
+        ans += f'{return_line}finally:{self.finally_stmt._backend(level + 1)}'
+    return ans
 
 
 @extend(node.while_stmt)

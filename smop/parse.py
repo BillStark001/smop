@@ -42,6 +42,7 @@ precedence = (
 use_nargin = False
 use_varargin = False
 
+
 def p_top(p):
     """
     top :
@@ -459,7 +460,7 @@ def p_expr_stmt(p):
     expr_stmt : expr_list SEMI
     """
     assert isinstance(p[1], node.expr_list)
-    
+
     p[0] = node.expr_stmt(expr=p[1])
 
 
@@ -556,7 +557,7 @@ def p_func_head(p):
     else:
         assert 0, "func head len %d" % len(p)
     p[0] = node.func_stmt(ident=fname, ret=ret, modif=modif,
-                          args=None, stmt_list=None, 
+                          args=None, stmt_list=None,
                           use_nargin=False, use_varargin=False)
 
 
@@ -595,7 +596,6 @@ def p_func_stmt(p):
     use_nargin = _un
     use_varargin = _uv
 
-    
 
 @exceptions
 def p_funcall_expr(p):
@@ -605,26 +605,27 @@ def p_funcall_expr(p):
                  | expr HANDLE ident LPAREN expr_list RPAREN
                  | expr HANDLE ident LPAREN RPAREN
     """
-    
+
     def ravel_func(p3):
         return len(p3) == 1 and isinstance(p3[0], node.expr) and \
             p3[0].op == ":" and not p3[0].args
-    
+
     if len(p) == 7 or len(p) == 6:
         func_expr = node.func_superclass_handle(p[1], p[3])
     else:
         func_expr = p[1]
-        
+
     if len(p) % 2 == 1:
         args = p[len(p)-2]
     else:
         args = node.expr_list()
-        
+
     if ravel_func(args):
         args = node.expr_list([func_expr])
         func_expr = node.ident("ravel")
-        
-    assert isinstance(args, node.expr_list), f'funcall args {args} {type(args)}'
+
+    assert isinstance(
+        args, node.expr_list), f'funcall args {args} {type(args)}'
     p[0] = node.funcall(func_expr=func_expr, args=args)
 
 
@@ -926,7 +927,8 @@ def p_fa_1(p):
     fa_1 : ident LPAREN expr_list RPAREN
          | ident 
     """
-    p[0] = node.func_arg_restr(name=p[1], dim=None, cls=None, val=None, defVal=None)
+    p[0] = node.func_arg_restr(
+        name=p[1], dim=None, cls=None, val=None, defVal=None)
     if len(p) == 5:
         p[0].dim = p[3]
 
@@ -995,13 +997,15 @@ def p_func_args(p):
               | FUNCTION_ARGUMENTS LPAREN expr_list RPAREN SEMI func_arg_list END_FUNCTION_ARGUMENTS
     """
     if len(p) == 5:
-        p[0] = node.func_args(modif=node.expr_list(), restrs=p[3], extstmt=None)
+        p[0] = node.func_args(modif=node.expr_list(),
+                              restrs=p[3], extstmt=None)
     elif len(p) == 8:
         p[0] = node.func_args(modif=p[3], restrs=p[6], extstmt=None)
     else:
         assert 0, "unexpected length: %d" % len(p)
 
 # classdef
+
 
 @exceptions
 def p_stmt_list_epsilon(p):
@@ -1010,8 +1014,8 @@ def p_stmt_list_epsilon(p):
         p[0] = node.stmt_list()
     else:
         p[0] = p[1]
-    
-    
+
+
 @exceptions
 def p_class_props(p):
     "class_props : CLASSDEF_PROPS SEMI stmt_list_epsilon END_CLASSDEF_PROPS\n| CLASSDEF_PROPS lambda_args SEMI stmt_list_epsilon END_CLASSDEF_PROPS"

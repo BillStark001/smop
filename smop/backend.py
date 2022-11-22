@@ -206,7 +206,7 @@ def _backend(self: node.node, level: int = 0):
             is_parens = False
         if not is_parens:
             return "%s.%s" % (self.args[0]._backend(),
-                             self.args[1]._backend())
+                              self.args[1]._backend())
         else:
             return "getattr(%s,%s)" % (self.args[0]._backend(),
                                        self.args[1]._backend())
@@ -277,9 +277,9 @@ def _backend(self: node.node, level: int = 0):
     if not last_ret_expr_used():
         if last_ret_expr():
             ss += '\n' + (indent * (level + 1)) + \
-                      node.return_stmt()._backend(level=level+1)
+                node.return_stmt()._backend(level=level+1)
     pop_ret_expr()
-    
+
     return ss
 
 
@@ -342,9 +342,9 @@ def _backend(self: node.node, level: int = 0):
 @extend(node.let)
 def _backend(self: node.node, level: int = 0):
     if not options.no_numbers:
-        t = " # %s:%s" % (#indent * level, 
-                            os.path.basename(options.filename),
-                            self.lineno)
+        t = " # %s:%s" % (  # indent * level,
+            os.path.basename(options.filename),
+            self.lineno)
         # level*indent)
     else:
         t = ''
@@ -361,15 +361,15 @@ def _backend(self: node.node, level: int = 0):
                     self.args._backend())
         except:
             s += "%s.%s = copy(%s)" % (self.ret.args[0]._backend(),
-                                      self.ret.args[1]._backend(),
-                                      self.args._backend())
+                                       self.ret.args[1]._backend(),
+                                       self.args._backend())
     elif (self.ret.__class__ is node.ident and
           self.args.__class__ is node.ident):
         s += "%s = copy(%s)" % (self.ret._backend(),
-                              self.args._backend())
+                                self.args._backend())
     else:
         s += "%s = %s" % (self.ret._backend(),
-                        self.args._backend())
+                          self.args._backend())
     return s+t
 
 
@@ -465,7 +465,8 @@ def _backend(self: node.node, level: int = 0):
     flag = False
     if self.catch_stmt:
         flag = True
-        ex = (' Exception as ' + self.catch_cond._backend()) if self.catch_cond else ''
+        ex = (' Exception as ' + self.catch_cond._backend()
+              ) if self.catch_cond else ''
         ans += f'{return_line}except{ex}:{self.catch_stmt._backend(level + 1)}'
     if self.finally_stmt or not flag:
         ans += f'{return_line}finally:{self.finally_stmt._backend(level + 1)}'
@@ -478,6 +479,7 @@ def _backend(self: node.node, level: int = 0):
     return fmt % (self.cond_expr._backend(),
                   self.stmt_list._backend(level+1))
 
+
 @extend(node.class_props)
 def _backend(self: node.class_props, level: int = 0):
     ans = '# restrictions: ' + self.restrs._backend(0) + '\n' \
@@ -485,12 +487,14 @@ def _backend(self: node.class_props, level: int = 0):
     ans += self.stmt_list._backend(level)
     return ans
 
+
 @extend(node.class_methods)
 def _backend(self: node.class_methods, level: int = 0):
     ans = '# restrictions: ' + self.restrs._backend(0) + '\n' \
         if self.restrs else ''
     ans += self.stmt_list._backend(level)
     return ans
+
 
 @extend(node.classdef_stmt)
 def _backend(self: node.node, level: int = 0):
@@ -501,6 +505,5 @@ def _backend(self: node.node, level: int = 0):
 
     ans = class_def + '\n'
     ans += self.sub._backend(level + 1)
-    
-    return ans
 
+    return ans

@@ -862,22 +862,24 @@ def p_transpose_expr(p):
     p[0] = node.transpose(p[1], node.string(p[2]))
 
 
+
+
 @exceptions
 def p_try_catch(p):
     """
-    try_catch : TRY SEMI stmt_list CATCH SEMI stmt_list END_STMT
-              | TRY SEMI stmt_list CATCH ident SEMI stmt_list END_STMT
+    try_catch : TRY stmt_list CATCH stmt_list END_STMT
+              | TRY stmt_list CATCH ident stmt_list END_STMT
     """
     ## | TRY stmt_list END_STMT
-    if len(p) == 8:
-        catch_stmt = p[6]
+    if len(p) == 6:
+        catch_stmt = p[4]
         catch_cond = None
-    elif len(p) == 9:
-        catch_stmt = p[7]
-        catch_cond = p[5]
+    elif len(p) == 7:
+        catch_stmt = p[5]
+        catch_cond = p[4]
     else:
         assert 0
-    try_stmt = p[3]
+    try_stmt = p[2]
     assert isinstance(try_stmt, node.stmt_list)
     assert isinstance(catch_stmt, node.stmt_list)
     # assert isinstance(p[4],node.stmt_list)

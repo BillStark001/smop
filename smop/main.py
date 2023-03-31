@@ -12,7 +12,7 @@ import sys
 import os
 import traceback
 
-from smop.options import options
+from smop.options import options, make_parser
 from smop import parse
 from smop import resolve
 from smop import backend
@@ -56,7 +56,7 @@ def main():
     
     if not options.filelist:
         # no input assigned
-        options.parser.print_help()
+        make_parser().print_help()
         return
     
     fp: Optional[TextIOBase] = None

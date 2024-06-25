@@ -3,7 +3,8 @@ from typing import Tuple, Callable, List, Optional
 import os
 from os.path import basename, splitext, abspath
 
-from smop import resolve, backend, parse, meta, options
+from smop import resolve, backend, meta, options
+from smop import parser
 
 
 
@@ -98,7 +99,7 @@ def read(file: str) -> str:
     return buf if buf[-1] == '\n' else buf + '\n'
 
 def convert(src: str, do_resolve: bool = True, do_backend: bool = True) -> str:
-    stmt_list = parse.parse(src)
+    stmt_list = parser.parse(src)
     if not stmt_list:
         return ''
     

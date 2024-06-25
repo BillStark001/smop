@@ -13,7 +13,7 @@ import os
 import traceback
 
 from smop.options import options, make_parser
-from smop import parse
+from smop import parser
 from smop import resolve
 from smop import backend
 from smop import meta

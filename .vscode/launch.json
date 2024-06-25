@@ -1,0 +1,28 @@
+{
+  // https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "test_lexer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceRoot}/smop_test/test_lexer.py",
+      "cwd": "${workspaceRoot}",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+      },
+    },
+    {
+      "name": "test_parser",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceRoot}/smop_test/test_parser.py",
+      "cwd": "${workspaceRoot}",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+      },
+    },
+  ]
+}

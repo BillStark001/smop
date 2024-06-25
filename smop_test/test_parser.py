@@ -1,5 +1,5 @@
 import unittest
-from smop import parse
+from smop import parser
 from smop import node
 
 
@@ -7,7 +7,7 @@ class TestParse(unittest.TestCase):
     def test_p03(self):
         """Expected failure"""
         s = """[1 ; 1; 1 ; ];"""
-        t = parse.parse(s)
+        t = parser.parse(s)
         self.assert_(t)
 
 # FIXME

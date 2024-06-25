@@ -14,3 +14,6 @@ runtime/
 
 debug_cache/
 debug_cache/**
+
+**/__pycache__
+**/.mypy_cache

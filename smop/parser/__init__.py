@@ -2,11 +2,10 @@
 # Copyright 2011-2016 Victor Leikehman
 
 from ply import yacc
-from . import lexer
-from . lexer import tokens, raise_exception
-from . import node
+from .. import lexer
+from ..lexer import tokens, raise_exception
+from .. import node
 from smop.common import exceptions
-from smop.options import options
 
 # ident properties (set in parse.py)
 # ----------------------------------

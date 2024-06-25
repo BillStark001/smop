@@ -6,7 +6,6 @@ import re
 import ply.lex as lex
 from ply.lex import LexToken
 from ply.lex import TOKEN
-from smop.options import options
 
 
 tokens = [
@@ -28,19 +27,23 @@ reserved = {
     "continue": "CONTINUE",
     "else": "ELSE",
     "elseif": "ELSEIF",
-    "end_unwind_protect": "END_UNWIND_PROTECT",
+    # end
     "for": "FOR",
     "function": "FUNCTION",
     "global": "GLOBAL",
     "if": "IF",
     "otherwise": "OTHERWISE",
+    # parfor
     "persistent": "PERSISTENT",
     "return": "RETURN",
+    # spmd
     "switch": "SWITCH",
     "try": "TRY",
+    "while": "WHILE",
+    
+    "end_unwind_protect": "END_UNWIND_PROTECT",
     "unwind_protect": "UNWIND_PROTECT",
     "unwind_protect_cleanup": "UNWIND_PROTECT_CLEANUP",
-    "while": "WHILE",
 }
 
 class_reserved = {
@@ -61,7 +64,11 @@ tokens += list(func_reserved.values())
 tokens += ["END_" + x for x in func_reserved.values()]
 
 
-def new():
+def new(
+    octave = False,
+    no_comments = False,
+    testing_mode = False,
+):
     t_AND = r"\&"
     t_ANDAND = r"\&\&"
     t_ANDEQ = r"\&="
@@ -114,9 +121,11 @@ def new():
     id = r"[a-zA-Z_][a-zA-Z_0-9]*"  # name literals
     id2 = r"(\.%s)?(%s)" % (ws0, id)
 
-    def unescape(s):
+    def unescape(s: str) -> str:
         if s[0] == "'":
             return s[1:-1].replace("''", "'")
+        elif s[0] == '"':
+            return s[1:-1].replace('""', '"')
         else:
             try:
                 return s[1:-1].decode("string_escape")
@@ -307,14 +316,14 @@ def new():
     def t_COMMENT(t: LexToken) -> LexToken:
         r"(^[ \t]*[%#][^!\n].*\n)+"
         t.lexer.lineno += t.value.count("\n")
-        if not options.no_comments:
+        if not no_comments:
             t.type = "COMMENT"
             return t
 
     # drop end-of-line comments
     def t_comment(t: LexToken) -> LexToken:
         r"(%|\#)!?"
-        if not options.testing_mode or t.value[-1] != "!":
+        if not testing_mode or t.value[-1] != "!":
             t.lexer.lexpos = t.lexer.lexdata.find("\n", t.lexer.lexpos)
 
     @TOKEN(r"(?<=\w)" + ws1 + r"(?=\()")
@@ -386,7 +395,7 @@ def new():
 def raise_exception(error_type, message, my_lexer):
     startpos = 1 + my_lexer.lexdata.rfind("\n", 0, my_lexer.lexpos)
     endpos = my_lexer.lexdata.find("\n", startpos)
-    raise error_type(message, (options.filename,
+    raise error_type(message, ('options.filename',
                                my_lexer.lineno,
                                1 + my_lexer.lexpos - startpos,
                                my_lexer.lexdata[startpos:endpos]))

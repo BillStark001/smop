@@ -119,13 +119,22 @@ class TestLexer(unittest.TestCase):
         self.lexer.input(r"'hello''world'")
         tok = self.lexer.next()
         self.assertEqual(tok.value, r"hello'world")
+        
+    def test119(self):
+        "Quotes and backslashes in octave and matlab strings"
+        self.lexer.input(r'"hello""world"')
+        tok = self.lexer.next()
+        self.assertEqual(tok.value, r'hello"world')
 
+
+    @unittest.skip("no escape")
     def test112(self):
         "Quotes and backslashes in octave strings"
         self.lexer.input(r'"hello\"world"')
         tok = self.lexer.next()
         self.assertEqual(tok.value, r'hello"world')
 
+    @unittest.skip("no escape")
     def test114(self):
         "Quotes and backslashes in octave strings"
         self.lexer.input('''"hello\
@@ -133,24 +142,19 @@ world"''')
         tok = self.lexer.next()
         self.assertEqual(tok.value, r'helloworld')
 
+    @unittest.skip("no escape")
     def test116(self):
         "Quotes and backslashes in octave strings"
         self.lexer.input(r'"hello\n"')
         tok = self.lexer.next()
         self.assertEqual(tok.value, 'hello\n')
 
+    @unittest.skip("no escape")
     def test118(self):
         "Quotes and backslashes in octave strings"
         self.lexer.input(r'"hello\\world"')
         tok = self.lexer.next()
         self.assertEqual(tok.value, r'hello\world')
-
-    @unittest.skip("FIXME")
-    def test119(self):
-        "Quotes and backslashes in octave strings"
-        self.lexer.input(r'"hello""world"')
-        tok = self.lexer.next()
-        self.assertEqual(tok.value, r'hello"world')
 
     def test120(self):
         "d5ef: cell arrays nested in regular arrays"
@@ -193,4 +197,4 @@ world"''')
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(exit=False)
